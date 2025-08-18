@@ -45,11 +45,7 @@ Changelog = "https://github.com/mhbxyz/funktools/releases"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
-ignore = [
-  "ANN101",  # missing-type-self (not useful on dataclasses)
-  "ANN102",  # missing-type-cls
-]
+lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]
