@@ -1,4 +1,4 @@
-# funktools
+# fptk
 
 Pragmatic functional programming helpers for Python.
 
@@ -11,7 +11,7 @@ Pragmatic functional programming helpers for Python.
 
 ## Install
 ```bash
-pip install funktools
+pip install fptk
 # or for development
 pip install -e .[dev]
 ```

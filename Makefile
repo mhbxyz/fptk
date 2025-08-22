@@ -1,8 +1,8 @@
-# Makefile for funktools
+# Makefile for fptk
 # Usage: make <target>
 
 PY ?= python3
-PKG := funktools
+PKG := fptk
 SRC := src/$(PKG) tests
 
 .DEFAULT_GOAL := help

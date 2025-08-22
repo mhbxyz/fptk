@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
+P = ParamSpec("P")
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
@@ -25,3 +26,15 @@ def pipe(x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401, UP047
     for f in funcs:
         x = f(x)
     return x
+
+
+def curry(fn: Callable[P, T]) -> Callable[..., Any]:  # noqa: UP047
+    """Curry a function of N positional args into nested unary functions."""
+
+    def curried(*args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+        needed = fn.__code__.co_argcount
+        if len(args) + len(kwargs) >= needed:
+            return fn(*args, **kwargs)
+        return lambda *a, **k: curried(*(args + a), **{**kwargs, **k})
+
+    return curried
