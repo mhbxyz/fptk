@@ -276,7 +276,7 @@ wheels = [
 ]
 
 [[package]]
-name = "funktools"
+name = "fptk"
 version = "0.1.0"
 source = { editable = "." }
 

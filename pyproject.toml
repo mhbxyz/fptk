@@ -1,5 +1,5 @@
 [project]
-name = "funktools"
+name = "fptk"
 version = "0.1.0"
 requires-python = ">=3.12"
 description = "Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
@@ -38,9 +38,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mhbxyz/funktools"
-Issues = "https://github.com/mhbxyz/funktools/issues"
-Changelog = "https://github.com/mhbxyz/funktools/releases"
+Homepage = "https://github.com/mhbxyz/fptk"
+Issues = "https://github.com/mhbxyz/fptk/issues"
+Changelog = "https://github.com/mhbxyz/fptk/releases"
 
 [tool.ruff]
 line-length = 100
@@ -70,11 +70,11 @@ addopts = "-q"
 testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/funktools"]
+packages = ["src/fptk"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/funktools",
+  "src/fptk",
   "README.md",
   "LICENSE",
   "pyproject.toml",

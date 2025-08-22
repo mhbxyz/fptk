@@ -1,4 +1,4 @@
-"""funktools — pragmatic FP helpers for Python.
+"""fptk — pragmatic FP helpers for Python.
 
 Public API is intentionally small; prefer explicit imports per module.
 """

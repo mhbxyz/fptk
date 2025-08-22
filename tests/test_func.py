@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funktools.core.func import compose, curry, pipe
+from fptk.core.func import compose, curry, pipe
 
 EXPECTED = 8  # avoid magic number (PLR2004)
 SIX = 6  # avoid magic number (PLR2004)
