@@ -57,3 +57,18 @@ def tap(f: Callable[[T], Any]) -> Callable[[T], T]:  # noqa: UP047
         return x
 
     return inner
+
+
+def thunk(f: Callable[[], T]) -> Callable[[], T]:  # noqa: UP047
+    """Memoized nullary function (simple lazy thunk)."""
+    evaluated = False
+    value: T | None = None
+
+    def wrapper() -> T:
+        nonlocal evaluated, value
+        if not evaluated:
+            value = f()
+            evaluated = True
+        return value  # type: ignore[return-value]
+
+    return wrapper
