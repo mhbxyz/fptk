@@ -34,9 +34,9 @@ T = TypeVar("T")
 E = TypeVar("E")
 
 
-def validate_all[
-    T, E
-](checks: Iterable[Callable[[T], Result[T, E]]], value: T) -> Result[T, NonEmptyList[E]]:
+def validate_all[T, E](
+    checks: Iterable[Callable[[T], Result[T, E]]], value: T
+) -> Result[T, NonEmptyList[E]]:
     """Run checks on ``value`` and accumulate all errors.
 
     - On success for all checks, returns ``Ok`` with the (possibly transformed)
