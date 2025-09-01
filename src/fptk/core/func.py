@@ -1,7 +1,40 @@
+"""Core function combinators: compose, pipe, curry, flip, tap, thunk.
+
+These helpers provide small, pragmatic building blocks for a functional style.
+
+- ``compose(f, g)``: build a new function ``x -> f(g(x))``
+- ``pipe(x, *fs)``: thread a value through a sequence of unary functions
+- ``curry(fn)``: turn an N-arg function into nested unary functions
+- ``flip(fn)``: swap the first two arguments of a binary function
+- ``tap(f)``: run a side-effect on a value and return the value
+- ``thunk(f)``: memoized nullary function (simple lazy evaluation)
+
+Examples:
+    >>> from fptk.core.func import compose, pipe, curry, flip, tap, thunk
+    >>> pipe(2, lambda x: x + 1, lambda x: x * 3)
+    9
+    >>> inc_then_double = compose(lambda x: x * 2, lambda x: x + 1)
+    >>> inc_then_double(3)
+    8
+    >>> add = lambda a, b: a + b
+    >>> add_curried = curry(add)
+    >>> add_curried(2)(3)
+    5
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
+
+__all__ = [
+    "compose",
+    "pipe",
+    "curry",
+    "flip",
+    "tap",
+    "thunk",
+]
 
 P = ParamSpec("P")
 T = TypeVar("T")
