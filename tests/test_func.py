@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fptk.core.func import compose, curry, flip, pipe
+from fptk.core.func import compose, curry, flip, pipe, tap
 
 # avoid magic number (PLR2004)
 EIGHT = 8
 SIX = 6
 THREE = 3
+FORTY_TWO = 42
 
 
 def inc(x: int) -> int:
@@ -41,3 +42,14 @@ def test_flip() -> None:
     flipped = flip(sub)
     assert sub(5, 2) == THREE
     assert flipped(5, 2) == -THREE
+
+
+def test_tap() -> None:
+    out: list[int] = []
+
+    def record(x: int) -> None:
+        out.append(x)
+
+    tapped = tap(record)
+    assert tapped(42) == FORTY_TWO
+    assert out == [42]

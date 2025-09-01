@@ -47,3 +47,13 @@ def flip(fn: Callable[[T, U], V]) -> Callable[[U, T], V]:  # noqa: UP047
         return fn(a, b)
 
     return flipped
+
+
+def tap(f: Callable[[T], Any]) -> Callable[[T], T]:  # noqa: UP047
+    """Run a side effect on a value and return the original value."""
+
+    def inner(x: T) -> T:
+        f(x)
+        return x
+
+    return inner
