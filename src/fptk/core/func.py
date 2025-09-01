@@ -38,3 +38,12 @@ def curry(fn: Callable[P, T]) -> Callable[..., Any]:  # noqa: UP047
         return lambda *a, **k: curried(*(args + a), **{**kwargs, **k})
 
     return curried
+
+
+def flip(fn: Callable[[T, U], V]) -> Callable[[U, T], V]:  # noqa: UP047
+    """Flip the first two arguments of a binary function."""
+
+    def flipped(b: U, a: T) -> V:
+        return fn(a, b)
+
+    return flipped
