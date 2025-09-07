@@ -17,45 +17,45 @@ install-dev: ## Create/refresh dev env via uv (uses dependency-groups)
 	  echo "uv is required. Install from https://docs.astral.sh/uv/install/"; \
 	  exit 1; \
 	}
-	uv sync
+	uv sync --group dev
 
 format: ## Run formatters (isort, black) in-place
-	isort .
-	black .
+	uv run isort .
+	uv run black .
 
 lint: ## Lint (ruff) + check formatting (isort --check, black --check)
-	ruff check .
-	isort --check-only .
-	black --check .
+	uv run ruff check .
+	uv run isort --check-only .
+	uv run black --check .
 
 type: ## Static type checking
-	mypy src
+	uv run mypy src
 
 test: ## Run unit tests (quiet)
-	pytest -q
+	uv run pytest -q
 
 test-verbose: ## Run tests verbosely
-	pytest -vv
+	uv run pytest -vv
 
 coverage: ## Test coverage report
-	pytest --cov=$(PKG) --cov-report=term-missing
+	uv run pytest --cov=$(PKG) --cov-report=term-missing
 
 bench: ## Quick property/benchmark tests (if present)
-	pytest -q --benchmark-only
+	uv run pytest -q --benchmark-only
 
 check: lint type test ## Run all quality gates: lint, type, tests (CI-like)
 
 build: ## Build sdist and wheel (dist/)
-	$(PY) -m build
+	uv run -m build
 
 build-check: build ## Validate built artifacts with twine
-	twine check dist/*
+	uv run twine check dist/*
 
 precommit-install: ## Set up pre-commit hooks locally
-	pre-commit install
+	uv run pre-commit install
 
 precommit-run: ## Run all pre-commit hooks on the repo
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 clean: ## Clean caches and build artifacts
 	rm -rf build/ dist/ .pytest_cache/ .mypy_cache/ .ruff_cache/ *.egg-info
