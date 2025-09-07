@@ -38,7 +38,7 @@ test-verbose: ## Run tests verbosely
 	uv run pytest -vv
 
 coverage: ## Test coverage report
-	uv run pytest --cov=$(PKG) --cov-report=term-missing
+	uv run pytest --cov=$(PKG) --cov-report=term-missing --cov-fail-under=90
 
 bench: ## Quick property/benchmark tests (if present)
 	uv run pytest -q --benchmark-only

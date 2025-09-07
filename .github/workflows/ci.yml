@@ -33,6 +33,6 @@ jobs:
       - name: Quality gates (lint, type, tests)
         run: make check
       - name: Coverage gate
-        run: pytest --cov=fptk --cov-report=term-missing --cov-fail-under=90
+        run: make coverage
       - name: Package validity (build + twine check)
         run: make build-check
