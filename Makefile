@@ -19,11 +19,13 @@ install-dev: ## Create/refresh dev env via uv (uses dependency-groups)
 	}
 	uv sync -g dev
 
-format: ## Run formatters (black) in-place
+format: ## Run formatters (isort, black) in-place
+	isort .
 	black .
 
-lint: ## Lint (ruff) + check formatting (black --check)
+lint: ## Lint (ruff) + check formatting (isort --check, black --check)
 	ruff check .
+	isort --check-only .
 	black --check .
 
 type: ## Static type checking

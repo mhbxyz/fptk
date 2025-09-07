@@ -55,6 +55,12 @@ lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
 line-length = 100
 target-version = ["py312"]
 
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
+known_first_party = ["fptk"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
