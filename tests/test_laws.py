@@ -3,16 +3,16 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis import strategies as st
 
-from fptk.adt.option import NONE, Option, Some, _None
+from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
 
 # ---------- Option Functor + Monad laws ----------
 
 
 @st.composite
-def options(draw) -> Some | _None:
+def options(draw) -> Some | Nothing:
     x = draw(st.integers())
-    return Some(x) if draw(st.booleans()) else NONE
+    return Some(x) if draw(st.booleans()) else NOTHING
 
 
 @given(options())
@@ -38,11 +38,11 @@ def _of(x: int) -> Option[int]:
 
 
 def _f(x: int) -> Option[int]:
-    return Some(x + 1) if (x % 3) != 0 else NONE
+    return Some(x + 1) if (x % 3) != 0 else NOTHING
 
 
 def _g(x: int) -> Option[int]:
-    return Some(x * 2) if (x % 5) != 0 else NONE
+    return Some(x * 2) if (x % 5) != 0 else NOTHING
 
 
 @given(st.integers())

@@ -5,9 +5,9 @@ preserving the first absence/error and avoiding manual loops and conditionals.
 
 What they do (all fail‑fast)
 - ``sequence_option(xs)``: collect ``Some`` values into ``Some[list]``; return
-  ``NONE`` on the first ``NONE``.
+  ``NOTHING`` on the first ``NOTHING``.
 - ``traverse_option(xs, f)``: map with ``f: A -> Option[B]`` and collect; short‑
-  circuits to ``NONE`` on the first missing value.
+  circuits to ``NOTHING`` on the first missing value.
 - ``sequence_result(xs)``: collect ``Ok`` values into ``Ok[list]``; return the
   first ``Err`` encountered.
 - ``traverse_result(xs, f)``: map with ``f: A -> Result[B, E]`` and collect;
@@ -21,15 +21,15 @@ Practical notes
 
 Quick examples
 
-    >>> from fptk.adt.option import Some, NONE
+    >>> from fptk.adt.option import Some, NOTHING
     >>> sequence_option([Some(1), Some(2)])
     Some([1, 2])
-    >>> sequence_option([Some(1), NONE])
-    NONE
+    >>> sequence_option([Some(1), NOTHING])
+    NOTHING
     >>> traverse_option([1, 2, 3], lambda x: Some(x * 2))
     Some([2, 4, 6])
-    >>> traverse_option([1, 2, 3], lambda x: NONE if x == 2 else Some(x))
-    NONE
+    >>> traverse_option([1, 2, 3], lambda x: NOTHING if x == 2 else Some(x))
+    NOTHING
 
     >>> from fptk.adt.result import Ok, Err
     >>> sequence_result([Ok(1), Ok(2)])
@@ -46,7 +46,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
-from fptk.adt.option import NONE, Option, Some, _None
+from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
 
 __all__ = [
@@ -57,26 +57,28 @@ __all__ = [
 ]
 
 
-def sequence_option[A](xs: Iterable[Option[A]]) -> Option[list[A]] | _None:
-    """Convert Iterable[Option[A]] -> Option[list[A]] (NONE if any item is NONE)."""
+def sequence_option[A](xs: Iterable[Option[A]]) -> Option[list[A]] | Nothing:
+    """Convert Iterable[Option[A]] -> Option[list[A]] (NOTHING if any item is NOTHING)."""
     out: list[A] = []
     for x in xs:
         if isinstance(x, Some):
             out.append(x.value)
         else:
-            return NONE
+            return NOTHING
     return Some(out)
 
 
-def traverse_option[A, B](xs: Iterable[A], f: Callable[[A], Option[B]]) -> Option[list[B]] | _None:
-    """Map with f and sequence (fail on first NONE)."""
+def traverse_option[A, B](
+    xs: Iterable[A], f: Callable[[A], Option[B]]
+) -> Option[list[B]] | Nothing:
+    """Map with f and sequence (fail on first NOTHING)."""
     out: list[B] = []
     for x in xs:
         ox = f(x)
         if isinstance(ox, Some):
             out.append(ox.value)
         else:
-            return NONE
+            return NOTHING
     return Some(out)
 
 
