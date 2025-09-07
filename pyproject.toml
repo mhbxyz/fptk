@@ -47,7 +47,6 @@ Changelog = "https://github.com/mhbxyz/fptk/releases"
 line-length = 100
 target-version = "py312"
 lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
-lint.ignore = ["ANN101"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]
