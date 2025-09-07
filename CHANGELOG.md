@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/mhbxyz/fptk/compare/v0.1.1...v0.2.0) (2025-09-07)
+
+
+### Miscellaneous Chores
+
+* release 0.2.0 ([9351398](https://github.com/mhbxyz/fptk/commit/9351398488dd6846101409b368fc20953a022eeb))
+
 ## [0.1.1](https://github.com/mhbxyz/fptk/compare/v0.1.0...v0.1.1) (2025-09-01)
 
 
