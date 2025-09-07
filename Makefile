@@ -10,65 +10,55 @@ SRC := src/$(PKG) tests
 ## Show available targets
 help:
 	@echo "Available targets:" && \
-	awk 'BEGIN {FS=":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  [36m%-22s[0m %s", $$1, $$2 }' $(MAKEFILE_LIST)
+	awk 'BEGIN {FS=":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  [36m%-22s[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-## Create/refresh dev environment and tools
-install-dev:
-	$(PY) -m pip install --upgrade pip
-	pip install -e .
-	pip install ruff black mypy pytest hypothesis pytest-benchmark pre-commit build twine pytest-cov
+install-dev: ## Create/refresh dev env via uv (uses dependency-groups)
+	@command -v uv >/dev/null 2>&1 || { \
+	  echo "uv is required. Install from https://docs.astral.sh/uv/install/"; \
+	  exit 1; \
+	}
+	uv sync --group dev
 
-## Run formatters (black) in-place
-format:
-	black .
+format: ## Run formatters (isort, black) in-place
+	uv run isort .
+	uv run black .
 
-## Lint (ruff) + check formatting (black --check)
-lint:
-	ruff check .
-	black --check .
+lint: ## Lint (ruff) + check formatting (isort --check, black --check)
+	uv run ruff check .
+	uv run isort --check-only .
+	uv run black --check .
 
-## Static type checking
-Type:
-	mypy src
+type: ## Static type checking
+	uv run mypy src
 
-## Run unit tests (quiet)
-test:
-	pytest -q
+test: ## Run unit tests (quiet)
+	uv run pytest -q
 
-## Run tests verbosely
-Test-verbose:
-	pytest -vv
+test-verbose: ## Run tests verbosely
+	uv run pytest -vv
 
-## Test coverage report
-coverage:
-	pytest --cov=$(PKG) --cov-report=term-missing
+coverage: ## Test coverage report
+	uv run pytest --cov=$(PKG) --cov-report=term-missing --cov-fail-under=90
 
-## Quick property/benchmark tests (if present)
-bench:
-	pytest -q --benchmark-only
+bench: ## Quick property/benchmark tests (if present)
+	uv run pytest -q --benchmark-only
 
-## Run all quality gates: lint, type, tests (CI-like)
-check: lint Type test
+check: lint type test ## Run all quality gates: lint, type, tests (CI-like)
 
-## Build sdist and wheel (dist/)
-build:
-	$(PY) -m build
+build: ## Build sdist and wheel (dist/)
+	uv run -m build
 
-## Validate built artifacts with twine
-build-check: build
-	twine check dist/*
+build-check: build ## Validate built artifacts with twine
+	uv run twine check dist/*
 
-## Set up pre-commit hooks locally
-precommit-install:
-	pre-commit install
+precommit-install: ## Set up pre-commit hooks locally
+	uv run pre-commit install
 
-## Run all pre-commit hooks on the repo
-precommit-run:
-	pre-commit run --all-files
+precommit-run: ## Run all pre-commit hooks on the repo
+	uv run pre-commit run --all-files
 
-## Clean caches and build artifacts
-clean:
+clean: ## Clean caches and build artifacts
 	rm -rf build/ dist/ .pytest_cache/ .mypy_cache/ .ruff_cache/ *.egg-info
 	find . -name "__pycache__" -type d -exec rm -rf {} +
 
-.PHONY: help install-dev format lint Type test Test-verbose coverage bench check build build-check precommit-install precommit-run clean
+.PHONY: help install-dev format lint type test test-verbose coverage bench check build build-check precommit-install precommit-run clean

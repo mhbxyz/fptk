@@ -1,6 +1,6 @@
 [project]
 name = "fptk"
-version = "0.1.1"
+dynamic = ["version"]
 requires-python = ">=3.12"
 description = "Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
 readme = "README.md"
@@ -28,6 +28,7 @@ dev = [
     "build>=1.3.0",
     "hatchling>=1.27.0",
     "hypothesis>=6.138.2",
+    "isort>=6.0.1",
     "mypy>=1.17.1",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",
@@ -46,7 +47,6 @@ Changelog = "https://github.com/mhbxyz/fptk/releases"
 line-length = 100
 target-version = "py312"
 lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
-lint.ignore = ["ANN101"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]
@@ -54,6 +54,12 @@ lint.ignore = ["ANN101"]
 [tool.black]
 line-length = 100
 target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+src_paths = ["src", "tests"]
+known_first_party = ["fptk"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -82,6 +88,9 @@ include = [
   "release-please-config.json",
   ".release-please-manifest.json",
 ]
+
+[tool.hatch.version]
+path = "src/fptk/__init__.py"
 
 [build-system]
 requires = ["hatchling"]

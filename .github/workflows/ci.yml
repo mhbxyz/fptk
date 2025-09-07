@@ -26,11 +26,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: 'pyproject.toml'
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
       - name: Install dev deps (make)
         run: make install-dev
       - name: Quality gates (lint, type, tests)
         run: make check
       - name: Coverage gate
-        run: pytest --cov=fptk --cov-report=term-missing --cov-fail-under=90
+        run: make coverage
       - name: Package validity (build + twine check)
         run: make build-check
