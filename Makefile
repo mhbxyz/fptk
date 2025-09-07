@@ -17,7 +17,7 @@ install-dev: ## Create/refresh dev env via uv (uses dependency-groups)
 	  echo "uv is required. Install from https://docs.astral.sh/uv/install/"; \
 	  exit 1; \
 	}
-	uv sync -g dev
+	uv sync
 
 format: ## Run formatters (isort, black) in-place
 	isort .
