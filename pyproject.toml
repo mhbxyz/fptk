@@ -1,6 +1,6 @@
 [project]
 name = "fptk"
-version = "0.1.1"
+dynamic = ["version"]
 requires-python = ">=3.12"
 description = "Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
 readme = "README.md"
@@ -88,6 +88,9 @@ include = [
   "release-please-config.json",
   ".release-please-manifest.json",
 ]
+
+[tool.hatch.version]
+path = "src/fptk/__init__.py"
 
 [build-system]
 requires = ["hatchling"]
