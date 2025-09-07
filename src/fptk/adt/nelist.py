@@ -41,12 +41,12 @@ class NonEmptyList[E]:
     head: E
     tail: tuple[E, ...] = ()
 
-    def __iter__(self) -> Iterator[E]:
+    def __iter__(self: NonEmptyList[E]) -> Iterator[E]:
         """Iterate from ``head`` through all elements in ``tail``."""
         yield self.head
         yield from self.tail
 
-    def append(self, e: E) -> NonEmptyList[E]:
+    def append(self: NonEmptyList[E], e: E) -> NonEmptyList[E]:
         """Return a new list with ``e`` appended at the end."""
         return NonEmptyList(self.head, self.tail + (e,))
 
