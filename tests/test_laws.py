@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
+from fptk.adt.traverse import traverse_option, traverse_result
 
 # ---------- Option Functor + Monad laws ----------
 
@@ -122,7 +123,6 @@ def test_result_monad_associativity(m: Result[int, str]) -> None:
 @given(st.lists(st.integers()))
 def test_option_traverse_pure(xs: list[int]) -> None:
     """traverse(pure, xs) == pure(xs)"""
-    from fptk.adt.traverse import traverse_option
 
     def pure(x: int) -> Option[int]:
         return Some(x)
@@ -135,7 +135,6 @@ def test_option_traverse_pure(xs: list[int]) -> None:
 @given(st.lists(options()))
 def test_option_traverse_homomorphism(opts: list[Option[int]]) -> None:
     """traverse(f, xs) where f is pure should preserve structure"""
-    from fptk.adt.traverse import traverse_option
 
     def f(opt: Option[int]) -> Option[int]:
         return opt
@@ -152,7 +151,6 @@ def test_option_traverse_homomorphism(opts: list[Option[int]]) -> None:
 @given(st.lists(st.integers()))
 def test_result_traverse_pure(xs: list[int]) -> None:
     """traverse(pure, xs) == pure(xs)"""
-    from fptk.adt.traverse import traverse_result
 
     def pure(x: int) -> Result[int, str]:
         return Ok(x)
@@ -165,7 +163,6 @@ def test_result_traverse_pure(xs: list[int]) -> None:
 @given(st.lists(results()))
 def test_result_traverse_homomorphism(res_list: list[Result[int, str]]) -> None:
     """traverse(f, xs) where f is pure should preserve structure"""
-    from fptk.adt.traverse import traverse_result
 
     def f(res: Result[int, str]) -> Result[int, str]:
         return res
