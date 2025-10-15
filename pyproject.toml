@@ -50,6 +50,7 @@ lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN"]
+".benchmarks/*" = ["ANN"]
 
 [tool.black]
 line-length = 100

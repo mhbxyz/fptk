@@ -57,6 +57,7 @@ Quick examples
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable
 from typing import Any
 
@@ -65,6 +66,7 @@ from fptk.adt.result import Err, Ok, Result
 __all__ = [
     "compose",
     "pipe",
+    "async_pipe",
     "curry",
     "flip",
     "tap",
@@ -92,6 +94,24 @@ def pipe[T](x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
     """
     for f in funcs:
         x = f(x)
+    return x
+
+
+async def async_pipe[T](x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
+    """Thread a value through a sequence of possibly-async unary functions.
+
+    Each function may be synchronous or return an awaitable. The value is awaited
+    as needed between steps.
+
+    Example:
+        async def add1(x): return x + 1
+        def times3(x): return x * 3
+        await async_pipe(2, add1, times3)  # -> 9
+    """
+    for f in funcs:
+        x = f(x)
+        if inspect.isawaitable(x):
+            x = await x
     return x
 
 

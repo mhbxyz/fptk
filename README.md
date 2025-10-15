@@ -1,13 +1,14 @@
 # fptk
 
-Pragmatic functional programming helpers for Python (3.12+). Small, explicit API with useful building blocks: function combinators, lightweight ADTs, lazy iterators, and applicative validation.
+Pragmatic functional programming helpers for Python (3.12+). Small, explicit API with useful building blocks: function combinators, lightweight ADTs, lazy iterators, applicative validation, and async support.
 
 ## Features
 - Tiny, explicit API (no magic or operator overloading)
 - Ergonomic function helpers: `pipe`, `compose`, `curry`, `flip`, `tap`, `thunk`
-- Lightweight ADTs: `Option`, `Result`, `NonEmptyList`
+- Lightweight ADTs: `Option`, `Result`, `NonEmptyList` with `unwrap`, `expect`, and async variants
 - Lazy iterator utilities: `map_iter`, `filter_iter`, `chunk`, `group_by_key`
 - Applicative validation (`validate_all`) that accumulates all errors
+- Async support: `async_pipe`, `gather_results`, async traverse functions
 - Strict typing (mypy --strict), clean style (ruff, black), and tests
 
 ## Install
@@ -21,7 +22,7 @@ pip install -e .[dev]
 ## Quick Start
 ```python
 from fptk.core.func import pipe, compose, curry, tap
-from fptk.adt.option import Some, NONE, from_nullable
+from fptk.adt.option import Some, NOTHING, from_nullable
 from fptk.adt.result import Ok, Err
 from fptk.adt.nelist import NonEmptyList
 from fptk.iter.lazy import map_iter, filter_iter, chunk
@@ -60,15 +61,36 @@ def has_digit(s: str):
     return Ok(s) if any(c.isdigit() for c in s) else Err("no digit")
 
 assert validate_all([min_len(3), has_digit], "ab3").is_ok()
+
+# Async support
+from fptk.async_tools import gather_results
+from fptk.adt.traverse import traverse_result_async
+
+async def parse_int_async(s: str) -> Result[int, str]:
+    try:
+        return Ok(int(s))
+    except ValueError:
+        return Err(f"Invalid int: {s}")
+
+async def example_async():
+    # Gather multiple async results
+    results = await gather_results([parse_int_async("1"), parse_int_async("2")])
+    assert results == Ok([1, 2])
+
+    # Async traverse
+    result = await traverse_result_async(["1", "2", "3"], parse_int_async)
+    assert result == Ok([1, 2, 3])
 ```
 
 ## API Overview
-- `fptk.core.func`: `compose`, `pipe`, `curry`, `flip`, `tap`, `thunk`
-- `fptk.adt.option`: `Option[T]`, `Some[T]`, `None_`, `NONE`, `from_nullable`
-- `fptk.adt.result`: `Result[T, E]`, `Ok[T, E]`, `Err[T, E]`
-- `fptk.adt.nelist`: `NonEmptyList[E]`
+- `fptk.core.func`: `compose`, `pipe`, `async_pipe`, `curry`, `flip`, `tap`, `thunk`
+- `fptk.adt.option`: `Option[T]`, `Some[T]`, `NOTHING`, `from_nullable`, `unwrap`, `expect`, `unwrap_or`
+- `fptk.adt.result`: `Result[T, E]`, `Ok[T, E]`, `Err[T, E]`, `unwrap`, `expect`
+- `fptk.adt.nelist`: `NonEmptyList[E]`, `to_list`
+- `fptk.adt.traverse`: `sequence_option`, `traverse_option`, `sequence_result`, `traverse_result`, `traverse_option_async`, `traverse_result_async`
 - `fptk.iter.lazy`: `map_iter`, `filter_iter`, `chunk`, `group_by_key`
 - `fptk.validate`: `validate_all`
+- `fptk.async_tools`: `async_pipe`, `gather_results`, `gather_results_accumulate`
 
 Public APIs are intentionally small; prefer explicit imports per module. See each module’s docstrings for usage details and examples.
 

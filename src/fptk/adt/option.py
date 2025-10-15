@@ -46,7 +46,7 @@ when turning ``T | None`` into ``Option[T]``.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from typing import cast
 
@@ -94,7 +94,30 @@ class Option[T]:
         """
         return f(self.value) if isinstance(self, Some) else cast(Option[U], NOTHING)
 
+    async def map_async[U](self: Option[T], f: Callable[[T], Awaitable[U]]) -> Option[U]:
+        """Awaitably transform the value if present; otherwise ``NOTHING``.
+
+        Useful for composing async functions over optional values.
+        """
+        if isinstance(self, Some):
+            return Some(await f(self.value))
+        return cast(Option[U], NOTHING)
+
+    async def bind_async[U](self: Option[T], f: Callable[[T], Awaitable[Option[U]]]) -> Option[U]:
+        """Awaitably flat-map with ``f`` returning an ``Option``."""
+        if isinstance(self, Some):
+            return await f(self.value)
+        return cast(Option[U], NOTHING)
+
     def get_or[U](self: Option[T], default: U) -> T | U:
+        """Unwrap the value or return ``default`` if ``NOTHING``.
+
+        .. deprecated:: 0.3.0
+            Use ``unwrap_or`` instead for consistency with Result.
+        """
+        return self.value if isinstance(self, Some) else default
+
+    def unwrap_or[U](self: Option[T], default: U) -> T | U:
         """Unwrap the value or return ``default`` if ``NOTHING``."""
         return self.value if isinstance(self, Some) else default
 
@@ -118,6 +141,18 @@ class Option[T]:
     def match[U](self: Option[T], some: Callable[[T], U], none: Callable[[], U]) -> U:
         """Pattern-match helper."""
         return some(self.value) if isinstance(self, Some) else none()
+
+    def unwrap(self: Option[T]) -> T:
+        """Return inner value for Some, else raise ValueError."""
+        if isinstance(self, Some):
+            return cast(T, self.value)
+        raise ValueError("Unwrapped NOTHING")
+
+    def expect(self: Option[T], msg: str) -> T:
+        """Return inner value for Some, else raise ValueError with custom message."""
+        if isinstance(self, Some):
+            return cast(T, self.value)
+        raise ValueError(msg)
 
 
 @dataclass(frozen=True, slots=True)

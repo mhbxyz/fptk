@@ -49,7 +49,7 @@ Quick examples
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import cast
 
@@ -71,23 +71,43 @@ class Result[T, E]:
         """Return ``True`` if this is ``Err`` (not ``Ok``)."""
         return not self.is_ok()
 
-    def map[U](self: Result[T, E], f: Callable[[T], U]) -> Result[U, E]:
+    def map[U](self: Result[T, E], f: Callable[[T], U]) -> Ok[U, E] | Result[U, E]:
         """Transform the success value with ``f``; preserve errors.
 
         ``Ok(x).map(f)`` becomes ``Ok(f(x))``; ``Err(e)`` stays ``Err(e)``.
         """
-        return Ok(f(self.value)) if isinstance(self, Ok) else cast(Result[U, E], self)
+        if isinstance(self, Ok):
+            return Ok(f(self.value))
+        return cast(Result[U, E], self)
 
     def bind[U](self: Result[T, E], f: Callable[[T], Result[U, E]]) -> Result[U, E]:
         """Flat-map with ``f`` returning another ``Result``.
 
         Also known as ``and_then``/``flat_map``.
         """
-        return f(self.value) if isinstance(self, Ok) else cast(Result[U, E], self)
+        if isinstance(self, Ok):
+            return f(self.value)
+        return cast(Result[U, E], self)
+
+    async def map_async[U](self: Result[T, E], f: Callable[[T], Awaitable[U]]) -> Result[U, E]:
+        """Awaitably transform the success value; preserve errors."""
+        if isinstance(self, Ok):
+            return Ok(await f(self.value))
+        return cast(Result[U, E], self)
+
+    async def bind_async[U](
+        self: Result[T, E], f: Callable[[T], Awaitable[Result[U, E]]]
+    ) -> Result[U, E]:
+        """Awaitably flat-map with ``f`` returning another ``Result``."""
+        if isinstance(self, Ok):
+            return await f(self.value)
+        return cast(Result[U, E], self)
 
     def map_err[U](self: Result[T, E], f: Callable[[E], U]) -> Result[T, U]:
         """Transform the error with ``f``; preserve successes."""
-        return Err(f(self.error)) if isinstance(self, Err) else cast(Result[T, U], self)
+        if isinstance(self, Err):
+            return Err(f(self.error))
+        return cast(Result[T, U], self)
 
     def unwrap_or[U](self: Result[T, E], default: U) -> T | U:
         """Return inner value for Ok, else provided default."""
@@ -95,11 +115,25 @@ class Result[T, E]:
 
     def unwrap_or_else[U](self: Result[T, E], f: Callable[[E], U]) -> T | U:
         """Return inner value for Ok, else compute default from error."""
-        return self.value if isinstance(self, Ok) else f(cast(Err[T, E], self).error)
+        if isinstance(self, Ok):
+            return cast(Ok[T, E], self).value
+        return f(cast(Err[T, E], self).error)
 
     def match[U](self: Result[T, E], ok: Callable[[T], U], err: Callable[[E], U]) -> U:
         """Pattern-match helper."""
         return ok(self.value) if isinstance(self, Ok) else err(cast(Err[T, E], self).error)
+
+    def unwrap(self: Result[T, E]) -> T:
+        """Return inner value for Ok, else raise ValueError with error."""
+        if isinstance(self, Ok):
+            return cast(T, self.value)
+        raise ValueError(f"Unwrapped Err: {cast(Err[T, E], self).error!r}")
+
+    def expect(self: Result[T, E], msg: str) -> T:
+        """Return inner value for Ok, else raise ValueError with custom message."""
+        if isinstance(self, Ok):
+            return cast(T, self.value)
+        raise ValueError(msg)
 
 
 @dataclass(frozen=True, slots=True)

@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
+from fptk.adt.traverse import traverse_option, traverse_result
 
 # ---------- Option Functor + Monad laws ----------
 
@@ -114,3 +115,69 @@ def test_result_monad_right_identity(m: Result[int, str]) -> None:
 @given(results())
 def test_result_monad_associativity(m: Result[int, str]) -> None:
     assert m.bind(rf).bind(rg) == m.bind(lambda x: rf(x).bind(rg))
+
+
+# ---------- Applicative Functor laws (for traverse) ----------
+
+
+@given(st.lists(st.integers()))
+def test_option_traverse_pure(xs: list[int]) -> None:
+    """traverse(pure, xs) == pure(xs)"""
+
+    def pure(x: int) -> Option[int]:
+        return Some(x)
+
+    result = traverse_option(xs, pure)
+    expected = Some(xs)
+    assert result == expected
+
+
+@given(st.lists(options()))
+def test_option_traverse_homomorphism(opts: list[Option[int]]) -> None:
+    """traverse(f, xs) where f is pure should preserve structure"""
+
+    def f(opt: Option[int]) -> Option[int]:
+        return opt
+
+    result = traverse_option(opts, f)
+    expected = Some(
+        [opt.value if isinstance(opt, Some) else None for opt in opts if isinstance(opt, Some)]
+    )
+    if any(isinstance(opt, Nothing) for opt in opts):
+        expected = NOTHING
+    assert result == expected
+
+
+@given(st.lists(st.integers()))
+def test_result_traverse_pure(xs: list[int]) -> None:
+    """traverse(pure, xs) == pure(xs)"""
+
+    def pure(x: int) -> Result[int, str]:
+        return Ok(x)
+
+    result = traverse_result(xs, pure)
+    expected = Ok(xs)
+    assert result == expected
+
+
+@given(st.lists(results()))
+def test_result_traverse_homomorphism(res_list: list[Result[int, str]]) -> None:
+    """traverse(f, xs) where f is pure should preserve structure"""
+
+    def f(res: Result[int, str]) -> Result[int, str]:
+        return res
+
+    result = traverse_result(res_list, f)
+    values = []
+    first_err = None
+    for res in res_list:
+        if isinstance(res, Ok):
+            values.append(res.value)
+        elif first_err is None:
+            first_err = res.error
+
+    if first_err is not None:
+        expected = Err(first_err)
+    else:
+        expected = Ok(values)
+    assert result == expected

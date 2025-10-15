@@ -21,13 +21,10 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import TypeVar
 
 __all__ = [
     "NonEmptyList",
 ]
-
-E = TypeVar("E")
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,3 +56,7 @@ class NonEmptyList[E]:
         except StopIteration:
             return None
         return NonEmptyList(h, tuple(iterator))
+
+    def to_list(self: NonEmptyList[E]) -> list[E]:
+        """Convert to a regular Python list."""
+        return list(self)

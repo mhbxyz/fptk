@@ -44,7 +44,8 @@ Quick examples
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
+from typing import cast
 
 from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
@@ -54,6 +55,8 @@ __all__ = [
     "traverse_option",
     "sequence_result",
     "traverse_result",
+    "traverse_option_async",
+    "traverse_result_async",
 ]
 
 
@@ -100,6 +103,36 @@ def traverse_result[A, B, E](xs: Iterable[A], f: Callable[[A], Result[B, E]]) ->
     out: list[B] = []
     for x in xs:
         rx = f(x)
+        if isinstance(rx, Ok):
+            out.append(rx.value)
+        elif isinstance(rx, Err):
+            return Err(rx.error)
+        else:  # pragma: no cover - unreachable with current Result variants
+            raise TypeError("Unexpected Result variant")
+    return Ok(out)
+
+
+async def traverse_option_async[A, B](
+    xs: Iterable[A], f: Callable[[A], Awaitable[Option[B]]]
+) -> Option[list[B]]:
+    """Async map with f and sequence (fail on first NOTHING)."""
+    out: list[B] = []
+    for x in xs:
+        ox = await f(x)
+        if isinstance(ox, Some):
+            out.append(ox.value)
+        else:
+            return cast(Option[list[B]], NOTHING)
+    return Some(out)
+
+
+async def traverse_result_async[A, B, E](
+    xs: Iterable[A], f: Callable[[A], Awaitable[Result[B, E]]]
+) -> Result[list[B], E]:
+    """Async map with f and sequence (fail-fast)."""
+    out: list[B] = []
+    for x in xs:
+        rx = await f(x)
         if isinstance(rx, Ok):
             out.append(rx.value)
         elif isinstance(rx, Err):
