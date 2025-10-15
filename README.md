@@ -19,6 +19,10 @@ pip install fptk
 pip install -e .[dev]
 ```
 
+## Documentation
+
+📚 [Read the full documentation](https://mhbxyz.github.io/fptk/) - Complete guides, recipes, and API reference.
+
 ## Quick Start
 ```python
 from fptk.core.func import pipe, compose, curry, tap
@@ -35,7 +39,7 @@ assert inc_then_double(3) == 8
 
 # Option
 assert Some(2).map(lambda x: x + 1).get_or(0) == 3
-assert NONE.map(lambda x: x).get_or(42) == 42
+assert NOTHING.map(lambda x: x).get_or(42) == 42
 assert list(Some("a").iter()) == ["a"]
 
 # Result

@@ -20,7 +20,11 @@ classifiers = [
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Libraries",
 ]
-dependencies = []
+dependencies = [
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
+    "sphinx-book-theme>=1.1.4",
+]
 
 [dependency-groups]
 dev = [
