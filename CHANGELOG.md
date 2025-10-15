@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/mhbxyz/fptk/compare/v0.2.0...v0.2.1) (2025-10-15)
+
+
+### Features
+
+* add Reader/State/Writer monads and comprehensive documentation for v0.3.0 ([#8](https://github.com/mhbxyz/fptk/issues/8)) ([c43f7e4](https://github.com/mhbxyz/fptk/commit/c43f7e493fc2e95378261e4c0c6463aa9ac92ba4))
+* comprehensive improvements for v0.3.0 ([#6](https://github.com/mhbxyz/fptk/issues/6)) ([86e9503](https://github.com/mhbxyz/fptk/commit/86e95032d12ef85b71dec8bb5ba9864065b593b9))
+
 ## [0.2.0](https://github.com/mhbxyz/fptk/compare/v0.1.1...v0.2.0) (2025-09-07)
 
 
