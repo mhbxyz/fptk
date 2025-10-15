@@ -19,6 +19,10 @@ pip install fptk
 pip install -e .[dev]
 ```
 
+## Documentation
+
+📚 [Read the full documentation](https://mhbxyz.github.io/fptk/) - Complete guides, recipes, and API reference.
+
 ## Quick Start
 ```python
 from fptk.core.func import pipe, compose, curry, tap
