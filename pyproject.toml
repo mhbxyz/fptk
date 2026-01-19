@@ -2,7 +2,7 @@
 name = "fptk"
 dynamic = ["version"]
 requires-python = ">=3.13"
-description = "Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
+description = "fptk (Functional Programming Toolkit) — Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

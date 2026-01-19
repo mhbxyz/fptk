@@ -1,4 +1,4 @@
-# fptk
+# fptk — Functional Programming Toolkit
 
 Pragmatic functional programming for Python 3.13+.
 
