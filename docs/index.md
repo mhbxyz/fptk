@@ -1,6 +1,6 @@
 # fptk
 
-Pragmatic functional programming for Python 3.12+.
+Pragmatic functional programming for Python 3.13+.
 
 ## What is Functional Programming?
 

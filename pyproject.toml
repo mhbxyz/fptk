@@ -1,7 +1,7 @@
 [project]
 name = "fptk"
 dynamic = ["version"]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 description = "Pragmatic functional programming helpers for Python (pipe/compose/curry, Option/Result, lazy iterators, applicative validation)."
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,7 +14,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
   "Intended Audience :: Developers",
@@ -45,7 +44,7 @@ Issues = "https://github.com/mhbxyz/fptk/issues"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
 
 [tool.ruff.lint.per-file-ignores]
@@ -54,10 +53,10 @@ lint.select = ["E", "F", "I", "UP", "B", "ANN", "PL"]
 
 [tool.black]
 line-length = 100
-target-version = ["py312"]
+target-version = ["py313"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 strict = true
 warn_unused_configs = true
 warn_redundant_casts = true

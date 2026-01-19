@@ -13,16 +13,61 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - run: make ci
+          python-version: '3.13'
+      - run: uv sync --group dev
+      - name: Check code style (ruff)
+        run: uv run ruff check .
+      - name: Check formatting (black)
+        run: uv run black --check .
+
+  type:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: uv sync --group dev
+      - name: Type check (mypy)
+        run: uv run mypy src
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: uv sync --group dev
+      - name: Run tests with coverage
+        run: uv run pytest --cov=fptk --cov-report=term-missing --cov-fail-under=90
+      - name: Run benchmarks
+        run: uv run pytest --benchmark-only
+
+  build:
+    name: Build
+    needs: [lint, type, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: uv sync --group dev
+      - name: Build package
+        run: uv run python -m build
+      - name: Check package
+        run: uv run twine check dist/*
