@@ -27,6 +27,13 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Check tag does not exist
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ steps.version.outputs.tag }}$"; then
+            echo "::error::Tag ${{ steps.version.outputs.tag }} already exists. Bump the version first."
+            exit 1
+          fi
+
       - name: Build package
         run: uv build
 
