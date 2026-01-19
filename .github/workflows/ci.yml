@@ -1,13 +1,15 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -16,23 +18,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ '3.12', '3.13' ]
+        python-version: ['3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: 'pyproject.toml'
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v5
-      - name: Install dev deps (make)
-        run: make install-dev
-      - name: Quality gates (lint, type, tests)
-        run: make check
-      - name: Coverage gate
-        run: make coverage
-      - name: Package validity (build + twine check)
-        run: make build-check
-      - name: Benchmark tests
-        run: make bench
+      - run: make ci
