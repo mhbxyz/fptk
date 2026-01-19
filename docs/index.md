@@ -1,6 +1,18 @@
-# fptk — Functional Programming Toolkit
+<p align="center">
+  <img src="assets/fptk-logo.svg" alt="fptk — Functional Programming Toolkit" width="450">
+</p>
 
-Pragmatic functional programming for Python 3.13+.
+<p align="center">
+  <strong>Pragmatic functional programming for Python 3.13+</strong>
+</p>
+
+<p align="center">
+  <a href="https://pypi.org/project/fptk/">PyPI</a> ·
+  <a href="https://github.com/mhbxyz/fptk">GitHub</a> ·
+  <a href="getting-started.md">Get Started</a>
+</p>
+
+---
 
 ## What is Functional Programming?
 
