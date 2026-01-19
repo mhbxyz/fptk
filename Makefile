@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help dev install format lint type test cov bench check ci build clean
+.PHONY: help dev install format lint type test cov bench check ci build docs clean
 
 PKG := fptk
 
@@ -43,6 +43,12 @@ ci: check cov bench ## Full CI pipeline (check + coverage + bench)
 build: ## Build package
 	uv run python -m build
 
+docs: ## Build documentation
+	uv run mkdocs build
+
+docs-serve: ## Serve documentation locally
+	uv run mkdocs serve
+
 clean: ## Remove build artifacts and caches
-	rm -rf build/ dist/ .pytest_cache/ .mypy_cache/ .ruff_cache/ .coverage *.egg-info
+	rm -rf build/ dist/ site/ .pytest_cache/ .mypy_cache/ .ruff_cache/ .coverage *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
