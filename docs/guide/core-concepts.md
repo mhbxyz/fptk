@@ -1,4 +1,4 @@
-# Core Concepts in fptk
+# Core Concepts
 
 This guide explains the main ideas behind fptk without getting too theoretical. We'll focus on practical usage with real examples.
 
@@ -24,6 +24,7 @@ def process_user_data(raw_data):
 ```
 
 **Benefits:**
+
 - Easy to read (top to bottom)
 - Easy to add/remove steps
 - Easy to test individual steps
@@ -41,6 +42,8 @@ process_and_save = compose(save_to_db, validate_user, parse_json)
 # Use it
 result = process_and_save(raw_data)
 ```
+
+Note: `compose` applies functions right-to-left: `compose(f, g)(x)` = `f(g(x))`.
 
 ### curry(): Flexible Function Calls
 
@@ -83,22 +86,25 @@ display_name = name.map(lambda n: n.upper()).unwrap_or("Anonymous")
 def get_full_name(user):
     return (
         from_nullable(user.get('first_name'))
-        .zip(from_nullable(user.get('last_name')))  # Combine two Options
-        .map(lambda names: f"{names[0]} {names[1]}")  # Format if both present
-        .or_else(lambda: from_nullable(user.get('display_name')))  # Fallback
-        .unwrap_or('Anonymous')  # Final fallback
+        .zip(from_nullable(user.get('last_name')))
+        .map(lambda names: f"{names[0]} {names[1]}")
+        .or_else(lambda: from_nullable(user.get('display_name')))
+        .unwrap_or('Anonymous')
     )
 
-print(get_full_name({'first_name': 'John', 'last_name': 'Doe'}))  # John Doe
-print(get_full_name({'display_name': 'Johnny'}))  # Johnny
-print(get_full_name({}))  # Anonymous
+get_full_name({'first_name': 'John', 'last_name': 'Doe'})  # "John Doe"
+get_full_name({'display_name': 'Johnny'})                   # "Johnny"
+get_full_name({})                                           # "Anonymous"
 ```
 
 **Key Operations:**
-- `map(f)`: Transform the value if present
-- `bind(f)`: Chain operations that return Option
-- `or_else(f)`: Provide fallback Option
-- `unwrap_or(default)`: Get value or default
+
+| Method | Description |
+|--------|-------------|
+| `map(f)` | Transform the value if present |
+| `bind(f)` | Chain operations that return Option |
+| `or_else(f)` | Provide fallback Option |
+| `unwrap_or(default)` | Get value or default |
 
 ## Error Handling with Result
 
@@ -122,22 +128,24 @@ error = divide(10, 0)   # Err("Division by zero")
 
 ```python
 def process_payment(amount, card_number):
-    return pipe(
-        validate_amount(amount),
-        lambda valid_amount: valid_amount.bind(lambda amt: validate_card(card_number)),
-        lambda valid_card: valid_card.bind(lambda card: charge_card(amt, card))
+    return (
+        validate_amount(amount)
+        .bind(lambda amt: validate_card(card_number))
+        .bind(lambda card: charge_card(amount, card))
     )
 
-# Each function returns Result, chain them safely
-result = process_payment(100, "4111111111111111")
 # Either Ok(success_data) or Err(error_message)
+result = process_payment(100, "4111111111111111")
 ```
 
 **Key Operations:**
-- `map(f)`: Transform success value
-- `bind(f)`: Chain operations returning Result
-- `map_err(f)`: Transform error
-- `unwrap_or(default)`: Get value or default
+
+| Method | Description |
+|--------|-------------|
+| `map(f)` | Transform success value |
+| `bind(f)` | Chain operations returning Result |
+| `map_err(f)` | Transform error |
+| `unwrap_or(default)` | Get value or default |
 
 ## Working with Collections
 
@@ -146,7 +154,8 @@ fptk provides lazy utilities for processing collections efficiently.
 ### Lazy Processing
 
 ```python
-from fptk.iter.lazy import map_iter, filter_iter, chunk
+from fptk.core.func import pipe
+from fptk.iter.lazy import map_iter, filter_iter
 
 # Process large datasets without loading everything
 def process_logs(logs):
@@ -154,7 +163,7 @@ def process_logs(logs):
         logs,
         lambda ls: filter_iter(lambda log: log['level'] == 'ERROR', ls),
         lambda ls: map_iter(lambda log: log['message'], ls),
-        lambda ls: list(ls)  # Convert to list when needed
+        list
     )
 ```
 
@@ -163,7 +172,7 @@ def process_logs(logs):
 ```python
 from fptk.iter.lazy import group_by_key, chunk
 
-# Group data by category
+# Group data by category (input must be sorted by key)
 grouped = dict(group_by_key(users, lambda u: u['department']))
 
 # Process in batches
@@ -179,7 +188,6 @@ Handle concurrent operations with proper error handling.
 
 ```python
 from fptk.async_tools import gather_results
-import asyncio
 
 async def fetch_user_data(user_ids):
     tasks = [fetch_user_api(uid) for uid in user_ids]
@@ -207,6 +215,7 @@ async def process_request(request):
 Accumulate multiple validation errors instead of failing fast.
 
 ```python
+from fptk.adt.result import Ok, Err
 from fptk.validate import validate_all
 
 def validate_user(user):
@@ -216,8 +225,8 @@ def validate_user(user):
         lambda u: Ok(u) if len(u.get('password', '')) >= 8 else Err("Password too short")
     ], user)
 
-result = validate_user({'email': 'invalid', 'password': 'short'})
-# Err(["Invalid email", "Password too short"])
+validate_user({'email': 'invalid', 'password': 'short'})
+# Err(NonEmptyList("Invalid email", "Password too short"))
 ```
 
 ## Putting It All Together
@@ -227,15 +236,14 @@ Here's a complete example combining multiple concepts:
 ```python
 from fptk.core.func import pipe
 from fptk.adt.result import Ok, Err
-from fptk.adt.option import from_nullable
 from fptk.validate import validate_all
 
 def process_registration(data):
     return pipe(
         data,
-        validate_registration,  # Result with all validation errors
-        lambda valid: valid.bind(save_user),  # Chain with save operation
-        lambda saved: saved.bind(send_welcome_email),  # Chain with email
+        validate_registration,
+        lambda valid: valid.bind(save_user),
+        lambda saved: saved.bind(send_welcome_email),
         lambda result: result.map(lambda user: {
             'user_id': user['id'],
             'message': 'Registration successful'
