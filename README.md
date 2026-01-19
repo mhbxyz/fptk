@@ -21,12 +21,6 @@
 pip install fptk
 ```
 
-## Features
-
-`pipe` · `compose` · `curry` · `Option` · `Result` · `Reader` · `State` · `Writer` · `validate_all` · lazy iterators · async tools
-
-Strict typing. No magic. Immutable ADTs.
-
 ## Quick Example
 
 ```python
