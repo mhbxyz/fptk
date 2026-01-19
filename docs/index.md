@@ -116,4 +116,4 @@ pip install fptk
 - **Recipes**
     - [API Development](recipes/api-development.md) — Build robust web APIs
     - [Data Processing](recipes/data-processing.md) — ETL pipelines and transformations
-- [API Reference](api.md) — Complete API documentation
+- [Reference](reference/index.md) — Complete API documentation with theory and examples

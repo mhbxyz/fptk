@@ -34,10 +34,22 @@ nav:
     - Core Concepts: guide/core-concepts.md
     - Side Effects: guide/side-effects.md
     - Migration: guide/migration.md
+  - Reference:
+    - Overview: reference/index.md
+    - Core Functions: reference/core.md
+    - Option: reference/option.md
+    - Result: reference/result.md
+    - Reader: reference/reader.md
+    - State: reference/state.md
+    - Writer: reference/writer.md
+    - NonEmptyList: reference/nelist.md
+    - Traverse: reference/traverse.md
+    - Validation: reference/validate.md
+    - Lazy Iterators: reference/lazy.md
+    - Async Tools: reference/async.md
   - Recipes:
     - API Development: recipes/api-development.md
     - Data Processing: recipes/data-processing.md
-  - API Reference: api.md
 
 markdown_extensions:
   - pymdownx.highlight:

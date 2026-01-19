@@ -284,4 +284,4 @@ Each pattern provides immediate value on its own.
 - [Core Concepts](guide/core-concepts.md) — Detailed guide to each pattern
 - [Side Effects](guide/side-effects.md) — How to structure applications with pure cores
 - [Migration Guide](guide/migration.md) — Step-by-step adoption from imperative code
-- [API Reference](api.md) — Complete documentation
+- [Reference](reference/index.md) — Complete documentation with theory and examples
