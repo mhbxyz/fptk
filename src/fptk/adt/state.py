@@ -64,11 +64,21 @@ class State[S, A]:
 
     def map[B](self: State[S, A], f: Callable[[A], B]) -> State[S, B]:
         """Transform the result with f, preserving state transitions."""
-        return State(lambda state: (f(self.run_state(state)[0]), self.run_state(state)[1]))
+
+        def run(state: S) -> tuple[B, S]:
+            value, new_state = self.run_state(state)
+            return (f(value), new_state)
+
+        return State(run)
 
     def bind[B](self: State[S, A], f: Callable[[A], State[S, B]]) -> State[S, B]:
         """Flat-map with f returning another State."""
-        return State(lambda state: f(self.run_state(state)[0]).run_state(self.run_state(state)[1]))
+
+        def run(state: S) -> tuple[B, S]:
+            value, intermediate_state = self.run_state(state)
+            return f(value).run_state(intermediate_state)
+
+        return State(run)
 
     def run(self: State[S, A], initial_state: S) -> tuple[A, S]:
         """Execute the computation with initial state, returning (value, final_state)."""

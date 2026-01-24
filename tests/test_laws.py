@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 from fptk.adt.option import NOTHING, Nothing, Option, Some
 from fptk.adt.result import Err, Ok, Result
+from fptk.adt.state import State
 from fptk.adt.traverse import traverse_option, traverse_result
 
 # ---------- Option Functor + Monad laws ----------
@@ -181,3 +182,67 @@ def test_result_traverse_homomorphism(res_list: list[Result[int, str]]) -> None:
     else:
         expected = Ok(values)
     assert result == expected
+
+
+# ---------- State Functor + Monad laws ----------
+
+
+def state_of(x: int) -> State[int, int]:
+    """Pure for State: return x without modifying state."""
+    return State(lambda s: (x, s))
+
+
+def state_f(x: int) -> State[int, int]:
+    """Kleisli arrow: increment value and state."""
+    return State(lambda s: (x + 1, s + 1))
+
+
+def state_g(x: int) -> State[int, int]:
+    """Kleisli arrow: double value, decrement state."""
+    return State(lambda s: (x * 2, s - 1))
+
+
+@given(st.integers(), st.integers())
+def test_state_functor_identity(value: int, initial_state: int) -> None:
+    """Functor identity: fmap id == id"""
+    state: State[int, int] = State(lambda s: (value, s))
+    assert state.map(lambda x: x).run(initial_state) == state.run(initial_state)
+
+
+@given(st.integers(), st.integers(), st.integers())
+def test_state_functor_composition(value: int, initial_state: int, k: int) -> None:
+    """Functor composition: fmap (f . g) == fmap f . fmap g"""
+
+    def f(x: int) -> int:
+        return x + 1
+
+    def g(x: int) -> int:
+        return x * (k % 5 + 1)
+
+    state: State[int, int] = State(lambda s: (value, s))
+    lhs = state.map(lambda x: f(g(x))).run(initial_state)
+    rhs = state.map(g).map(f).run(initial_state)
+    assert lhs == rhs
+
+
+@given(st.integers())
+def test_state_monad_left_identity(x: int) -> None:
+    """Left identity: return x >>= f == f x"""
+    initial_state = 0
+    assert state_of(x).bind(state_f).run(initial_state) == state_f(x).run(initial_state)
+
+
+@given(st.integers(), st.integers())
+def test_state_monad_right_identity(value: int, initial_state: int) -> None:
+    """Right identity: m >>= return == m"""
+    m: State[int, int] = State(lambda s: (value, s + 1))
+    assert m.bind(state_of).run(initial_state) == m.run(initial_state)
+
+
+@given(st.integers(), st.integers())
+def test_state_monad_associativity(value: int, initial_state: int) -> None:
+    """Associativity: (m >>= f) >>= g == m >>= (\\x -> f x >>= g)"""
+    m: State[int, int] = State(lambda s: (value, s))
+    lhs = m.bind(state_f).bind(state_g).run(initial_state)
+    rhs = m.bind(lambda x: state_f(x).bind(state_g)).run(initial_state)
+    assert lhs == rhs
