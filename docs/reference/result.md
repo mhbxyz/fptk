@@ -87,6 +87,7 @@ failure = Err("something went wrong")
 | `is_err()` | `() -> bool` | Returns `True` if `Err` |
 | `map(f)` | `(T -> U) -> Result[U, E]` | Transform success value |
 | `bind(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Chain Result-returning functions |
+| `and_then(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Alias for `bind` (Rust naming) |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine two Results into tuple |
 | `zip_with(other, f)` | `(Result[U, E], (T, U) -> R) -> Result[R, E]` | Combine two Results with function |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transform error value |

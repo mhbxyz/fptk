@@ -68,3 +68,9 @@ def test_option_zip_with() -> None:
     # Any NOTHING -> NOTHING
     assert NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING
     assert Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING
+
+
+def test_option_and_then_alias() -> None:
+    # and_then is alias for bind
+    assert Some(5).and_then(lambda x: Some(x + 1)) == Some(6)
+    assert NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING

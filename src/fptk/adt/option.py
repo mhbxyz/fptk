@@ -94,6 +94,10 @@ class Option[T]:
         """
         return f(self.value) if isinstance(self, Some) else cast(Option[U], NOTHING)
 
+    def and_then[U](self: Option[T], f: Callable[[T], Option[U]]) -> Option[U]:
+        """Alias for ``bind()``. Named after Rust's Option::and_then."""
+        return self.bind(f)
+
     def zip[U](self: Option[T], other: Option[U]) -> Option[tuple[T, U]]:
         """Combine two Options into an Option of tuple.
 

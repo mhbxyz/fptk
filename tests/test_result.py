@@ -64,3 +64,9 @@ def test_result_zip_with() -> None:
     # Any Err -> Err (first one)
     assert Err("e").zip_with(Ok(1), lambda a, b: a + b) == Err("e")
     assert Ok(1).zip_with(Err("e"), lambda a, b: a + b) == Err("e")
+
+
+def test_result_and_then_alias() -> None:
+    # and_then is alias for bind
+    assert Ok(5).and_then(lambda x: Ok(x + 1)) == Ok(6)
+    assert Err("e").and_then(lambda x: Ok(x + 1)) == Err("e")

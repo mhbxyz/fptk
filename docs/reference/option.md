@@ -76,6 +76,7 @@ from_nullable(some_value)  # Some(x) if x is not None, else NOTHING
 | `is_none()` | `() -> bool` | Returns `True` if `Nothing` |
 | `map(f)` | `(T -> U) -> Option[U]` | Transform the value if present |
 | `bind(f)` | `(T -> Option[U]) -> Option[U]` | Chain Option-returning functions |
+| `and_then(f)` | `(T -> Option[U]) -> Option[U]` | Alias for `bind` (Rust naming) |
 | `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine two Options into tuple |
 | `zip_with(other, f)` | `(Option[U], (T, U) -> R) -> Option[R]` | Combine two Options with function |
 | `unwrap_or(default)` | `(U) -> T | U` | Get value or default |

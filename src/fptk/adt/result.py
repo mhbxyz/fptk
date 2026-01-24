@@ -89,6 +89,10 @@ class Result[T, E]:
             return f(self.value)
         return cast(Result[U, E], self)
 
+    def and_then[U](self: Result[T, E], f: Callable[[T], Result[U, E]]) -> Result[U, E]:
+        """Alias for ``bind()``. Named after Rust's Result::and_then."""
+        return self.bind(f)
+
     def zip[U](self: Result[T, E], other: Result[U, E]) -> Result[tuple[T, U], E]:
         """Combine two Results into a Result of tuple.
 
