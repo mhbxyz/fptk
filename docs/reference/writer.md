@@ -124,6 +124,32 @@ w = Writer(42, ["started"], monoid_list)
 | `listen(writer)` | `Writer[W, A] -> Writer[W, (A, W)]` | Get value and log as pair |
 | `censor(f, writer)` | `(W -> W, Writer[W, A]) -> Writer[W, A]` | Modify the log |
 
+### Monoid Requirements
+
+Some functions require a monoid parameter, others don't:
+
+| Function | Needs Monoid? | Why |
+|----------|---------------|-----|
+| `Writer(v, log, m)` | Yes | Creates new Writer |
+| `Writer.unit(v, m)` | Yes | Creates new Writer |
+| `tell(log, m)` | Yes | Creates new Writer |
+| `listen(w)` | No | Uses existing Writer's monoid |
+| `censor(f, w)` | No | Uses existing Writer's monoid |
+
+Functions that **create** a Writer need the monoid to know how to combine logs later. Functions that **operate on** an existing Writer already have access to its monoid.
+
+```python
+from fptk.adt.writer import Writer, tell, listen, censor, monoid_list
+
+# Creating Writers - need monoid
+w1 = Writer.unit(5, monoid_list)
+w2 = tell(["log entry"], monoid_list)
+
+# Operating on existing Writers - monoid comes from the Writer
+w3 = listen(w1)                          # Uses w1's monoid
+w4 = censor(lambda logs: logs[-1:], w1)  # Uses w1's monoid
+```
+
 ### Built-in Monoids
 
 | Monoid | Description |
