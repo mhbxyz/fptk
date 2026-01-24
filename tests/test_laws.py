@@ -4,9 +4,11 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from fptk.adt.option import NOTHING, Nothing, Option, Some
+from fptk.adt.reader import Reader
 from fptk.adt.result import Err, Ok, Result
 from fptk.adt.state import State
 from fptk.adt.traverse import traverse_option, traverse_result
+from fptk.adt.writer import Writer, monoid_list
 
 # ---------- Option Functor + Monad laws ----------
 
@@ -245,4 +247,130 @@ def test_state_monad_associativity(value: int, initial_state: int) -> None:
     m: State[int, int] = State(lambda s: (value, s))
     lhs = m.bind(state_f).bind(state_g).run(initial_state)
     rhs = m.bind(lambda x: state_f(x).bind(state_g)).run(initial_state)
+    assert lhs == rhs
+
+
+# ---------- Reader Functor + Monad laws ----------
+
+
+def reader_of(x: int) -> Reader[int, int]:
+    """Pure for Reader: return x ignoring environment."""
+    return Reader(lambda _: x)
+
+
+def reader_f(x: int) -> Reader[int, int]:
+    """Kleisli arrow: add environment to value."""
+    return Reader(lambda env: x + env)
+
+
+def reader_g(x: int) -> Reader[int, int]:
+    """Kleisli arrow: multiply value by environment."""
+    return Reader(lambda env: x * env)
+
+
+@given(st.integers(), st.integers())
+def test_reader_functor_identity(value: int, env: int) -> None:
+    """Functor identity: fmap id == id"""
+    reader: Reader[int, int] = Reader(lambda _: value)
+    assert reader.map(lambda x: x).run(env) == reader.run(env)
+
+
+@given(st.integers(), st.integers(), st.integers())
+def test_reader_functor_composition(value: int, env: int, k: int) -> None:
+    """Functor composition: fmap (f . g) == fmap f . fmap g"""
+
+    def f(x: int) -> int:
+        return x + 1
+
+    def g(x: int) -> int:
+        return x * (k % 5 + 1)
+
+    reader: Reader[int, int] = Reader(lambda _: value)
+    lhs = reader.map(lambda x: f(g(x))).run(env)
+    rhs = reader.map(g).map(f).run(env)
+    assert lhs == rhs
+
+
+@given(st.integers(), st.integers())
+def test_reader_monad_left_identity(x: int, env: int) -> None:
+    """Left identity: return x >>= f == f x"""
+    assert reader_of(x).bind(reader_f).run(env) == reader_f(x).run(env)
+
+
+@given(st.integers(), st.integers())
+def test_reader_monad_right_identity(value: int, env: int) -> None:
+    """Right identity: m >>= return == m"""
+    m: Reader[int, int] = Reader(lambda e: value + e)
+    assert m.bind(reader_of).run(env) == m.run(env)
+
+
+@given(st.integers(), st.integers())
+def test_reader_monad_associativity(value: int, env: int) -> None:
+    """Associativity: (m >>= f) >>= g == m >>= (\\x -> f x >>= g)"""
+    m: Reader[int, int] = Reader(lambda _: value)
+    lhs = m.bind(reader_f).bind(reader_g).run(env)
+    rhs = m.bind(lambda x: reader_f(x).bind(reader_g)).run(env)
+    assert lhs == rhs
+
+
+# ---------- Writer Functor + Monad laws ----------
+
+
+def writer_of(x: int) -> Writer[list[str], int]:
+    """Pure for Writer: return x with empty log."""
+    return Writer.unit(x, monoid_list)
+
+
+def writer_f(x: int) -> Writer[list[str], int]:
+    """Kleisli arrow: increment and log."""
+    return Writer(x + 1, [f"f({x})"], monoid_list)
+
+
+def writer_g(x: int) -> Writer[list[str], int]:
+    """Kleisli arrow: double and log."""
+    return Writer(x * 2, [f"g({x})"], monoid_list)
+
+
+@given(st.integers())
+def test_writer_functor_identity(value: int) -> None:
+    """Functor identity: fmap id == id"""
+    writer = Writer.unit(value, monoid_list)
+    assert writer.map(lambda x: x).run() == writer.run()
+
+
+@given(st.integers(), st.integers())
+def test_writer_functor_composition(value: int, k: int) -> None:
+    """Functor composition: fmap (f . g) == fmap f . fmap g"""
+
+    def f(x: int) -> int:
+        return x + 1
+
+    def g(x: int) -> int:
+        return x * (k % 5 + 1)
+
+    writer = Writer.unit(value, monoid_list)
+    lhs = writer.map(lambda x: f(g(x))).run()
+    rhs = writer.map(g).map(f).run()
+    assert lhs == rhs
+
+
+@given(st.integers())
+def test_writer_monad_left_identity(x: int) -> None:
+    """Left identity: return x >>= f == f x"""
+    assert writer_of(x).bind(writer_f).run() == writer_f(x).run()
+
+
+@given(st.integers())
+def test_writer_monad_right_identity(value: int) -> None:
+    """Right identity: m >>= return == m"""
+    m = Writer(value, ["initial"], monoid_list)
+    assert m.bind(writer_of).run() == m.run()
+
+
+@given(st.integers())
+def test_writer_monad_associativity(value: int) -> None:
+    """Associativity: (m >>= f) >>= g == m >>= (\\x -> f x >>= g)"""
+    m = Writer.unit(value, monoid_list)
+    lhs = m.bind(writer_f).bind(writer_g).run()
+    rhs = m.bind(lambda x: writer_f(x).bind(writer_g)).run()
     assert lhs == rhs
