@@ -1,43 +1,43 @@
 <p align="center">
-  <img src="../assets/fptk-logo.svg" alt="fptk — Functional Programming Toolkit" width="450">
+  <img src="assets/fptk-logo.svg" alt="fptk — Functional Programming Toolkit" width="450">
 </p>
 
 <p align="center">
-  <strong>Programmation fonctionnelle pragmatique pour Python 3.13+</strong>
+  <strong>Une approche pragmatique de la programmation fonctionnelle en Python 3.13+</strong>
 </p>
 
 <p align="center">
   <a href="https://pypi.org/project/fptk/">PyPI</a> ·
   <a href="https://github.com/mhbxyz/fptk">GitHub</a> ·
-  <a href="getting-started.fr.md">Commencer</a>
+  <a href="getting-started.fr.md">Démarrage Rapide</a>
 </p>
 
 ---
 
 ## Qu'est-ce que la programmation fonctionnelle ?
 
-La programmation fonctionnelle est une manière d'écrire du code où vous construisez des programmes en composant des fonctions pures. Des fonctions qui retournent toujours la même sortie pour la même entrée et ne modifient rien en dehors d'elles-mêmes.
+La programmation fonctionnelle est un paradigme qui consiste à construire des programmes en assemblant des **fonctions pures**. C'est-à-dire des fonctions qui, pour une même entrée, produisent toujours la même sortie, sans modifier d'état extérieur (effets de bord).
 
-Cela semble abstrait, mais cela résout des problèmes réels :
+Bien que cela puisse paraître abstrait, cette approche résout des problèmes très concrets :
 
-- **Bugs liés à l'état partagé** : Quand plusieurs parties de votre code modifient les mêmes données, traquer les bugs devient un cauchemar. Les fonctions pures ne modifient rien, donc ce problème disparaît.
-- **Code difficile à tester** : Les fonctions avec des effets de bord (appels base de données, requêtes API, E/S fichiers) nécessitent des mocks complexes pour être testées. Les fonctions pures n'ont besoin que d'entrées et de sorties attendues.
-- **Code difficile à comprendre** : Quand une fonction peut tout faire — modifier des globales, appeler des API, écrire des fichiers — vous devez lire toute l'implémentation pour savoir ce qu'elle fait. Les fonctions pures sont prévisibles.
+-   **Les bugs liés à l'état partagé** : Lorsque plusieurs parties de votre code modifient les mêmes données, la recherche de bugs peut virer au cauchemar. Les fonctions pures n'ayant pas d'effets de bord, ce problème est éliminé à la racine.
+-   **La difficulté à tester le code** : Les fonctions avec des effets de bord (appels à une base de données, requêtes API, entrées/sorties de fichiers) exigent des mocks complexes pour leurs tests. À l'inverse, les fonctions pures se contentent d'entrées et de sorties attendues.
+-   **La complexité du code** : Quand une fonction peut potentiellement tout faire (modifier des variables globales, appeler des API, écrire dans des fichiers), il faut lire toute son implémentation pour comprendre son comportement. Les fonctions pures sont, par nature, prévisibles.
 
-La programmation fonctionnelle ne consiste pas à utiliser des abstractions sophistiquées. Il s'agit d'écrire du code plus facile à raisonner, tester et maintenir.
+La programmation fonctionnelle ne se résume pas à l'utilisation d'abstractions complexes. Il s'agit avant tout d'écrire du code plus simple à comprendre, à tester et à maintenir.
 
 ## Pourquoi fptk ?
 
-Python est un excellent langage, mais il a quelques points sensibles que les patrons fonctionnels résolvent élégamment :
+Python est un langage formidable, mais il présente quelques points faibles que les patrons fonctionnels corrigent avec élégance :
 
-### Le problème du `None`
+### Le problème de `None`
 
 ```python
 user = get_user(id)
 name = user.get("profile").get("name").upper()  # AttributeError
 ```
 
-Le `None` de Python se propage silencieusement jusqu'à l'explosion. Vous vous retrouvez avec du code défensif partout :
+`None` a tendance à se propager silencieusement dans le code jusqu'à ce qu'une erreur survienne. On se retrouve alors à écrire du code défensif à tout bout de champ :
 
 ```python
 user = get_user(id)
@@ -47,7 +47,7 @@ else:
     name = "Anonymous"
 ```
 
-L'`Option` de fptk rend l'absence explicite et composable :
+L'`Option` de fptk rend l'absence de valeur à la fois explicite et composable :
 
 ```python
 name = (
@@ -61,26 +61,26 @@ name = (
 
 ### Le problème des exceptions
 
-Les exceptions sont invisibles dans les signatures de fonctions. Vous appelez `parse_json(data)` et vous n'avez aucune idée qu'elle pourrait lever `JSONDecodeError`, `UnicodeDecodeError`, ou `MemoryError`. Vous enveloppez tout dans des try/except ou vous espérez que tout ira bien.
+Les exceptions sont invisibles. Rien dans la signature d'une fonction ne les indique. Lorsque vous appelez `parse_json(data)`, rien ne vous dit qu'elle peut lever `JSONDecodeError`, `UnicodeDecodeError` ou `MemoryError`. Vous finissez par envelopper vos appels dans des blocs `try/except`, ou par croiser les doigts.
 
-Le `Result` de fptk fait des erreurs une partie du type :
+`Result` de fptk intègre la possibilité d'échec directement dans le type de retour :
 
 ```python
 def parse_json(data: str) -> Result[dict, str]:
     ...
 
-# Le type de retour vous dit : cela peut échouer, gérez-le
+# Le type de retour vous alerte : cette fonction peut échouer, gérez-le.
 ```
 
-### Le problème des appels imbriqués
+### Le problème des appels de fonctions imbriqués
 
-Le code réel ressemble souvent à ceci :
+Dans la pratique, le code ressemble souvent à ceci :
 
 ```python
 send_email(format_message(validate(parse(request))))
 ```
 
-L'ordre de lecture est de l'intérieur vers l'extérieur. Ajouter une étape signifie trouver le bon niveau d'imbrication. Le `pipe` de fptk rend le flux de données linéaire :
+Il se lit de l'intérieur vers l'extérieur, et ajouter une étape oblige à trouver le bon niveau d'imbrication. `pipe` de fptk linéarise le flux de données :
 
 ```python
 pipe(request, parse, validate, format_message, send_email)
@@ -88,29 +88,29 @@ pipe(request, parse, validate, format_message, send_email)
 
 ## L'état d'esprit fonctionnel
 
-La programmation fonctionnelle vous demande de penser différemment :
+La programmation fonctionnelle vous invite à penser différemment :
 
 | Pensée impérative | Pensée fonctionnelle |
 |-------------------|----------------------|
-| "Fais ceci, puis fais cela" | "Transforme ceci en cela" |
-| Modifier les variables sur place | Créer de nouvelles valeurs à partir des anciennes |
-| Gérer les erreurs avec try/catch | Faire des erreurs une partie du type de retour |
-| Vérifier None partout | Rendre l'absence explicite avec Option |
-| Les fonctions peuvent tout faire | Les fonctions calculent uniquement des sorties à partir des entrées |
+| "Fais ceci, puis fais cela" | "Transforme ces données en cela" |
+| Modifier des données existantes | Créer de nouvelles données à partir des anciennes |
+| Gérer les erreurs avec `try/catch` | Intégrer l'échec au type de retour |
+| Tester la présence de `None` partout | Rendre l'absence de valeur explicite avec `Option` |
+| Des fonctions qui peuvent tout faire | Des fonctions qui ne font que calculer une sortie à partir d'une entrée |
 
-Ce changement demande de la pratique, mais le bénéfice est un code plus prévisible, testable et composable.
+Ce changement de perspective demande de la pratique, mais les bénéfices — un code plus prévisible, testable et composable — en valent la peine.
 
 ## Ce que fptk fournit
 
 | Fonctionnalité | Ce qu'elle résout |
 |----------------|-------------------|
-| `pipe`, `compose` | Appels de fonctions imbriqués, flux de données difficile à lire |
-| `Option` | Erreurs de pointeur null, vérifications défensives de None |
-| `Result` | Exceptions invisibles, gestion des erreurs peu claire |
-| `validate_all` | Validation fail-fast, messages d'erreur médiocres |
-| `Reader` | Injection de dépendances, passage de configuration |
-| `State` | État mutable, code à état difficile à tester |
-| `Writer` | Journalisation mêlée à la logique, effets de bord |
+| `pipe`, `compose` | Appels de fonctions imbriqués et flux de données peu lisible |
+| `Option` | Erreurs liées à `None` (`AttributeError`) et code défensif |
+| `Result` | Exceptions implicites et gestion d'erreurs éparpillée |
+| `validate_all` | Validation qui s'arrête à la première erreur et retours utilisateurs peu informatifs |
+| `Reader` | Injection de dépendances et transmission de configuration |
+| `State` | Gestion de l'état mutable et code difficile à tester |
+| `Writer` | Journalisation (logging) mêlée à la logique métier |
 
 ## Installation
 
@@ -120,12 +120,12 @@ pip install fptk
 
 ## Prochaines étapes
 
-- [Commencer](getting-started.fr.md) — Comprendre les concepts et commencer à utiliser fptk
-- **Guide**
-    - [Concepts fondamentaux](guide/core-concepts.md) — Plongée approfondie dans chaque patron
-    - [Effets de bord](guide/side-effects.md) — Structurer le code avec des cœurs purs
-    - [Migration](guide/migration.md) — Adopter progressivement les patrons fonctionnels
-- **Recettes**
-    - [Développement API](recipes/api-development.md) — Construire des API web robustes
-    - [Traitement de données](recipes/data-processing.md) — Pipelines ETL et transformations
-- [Référence](reference/index.md) — Documentation API complète avec théorie et exemples
+-   [Démarrage Rapide](getting-started.fr.md) — Comprendre les concepts et commencer à utiliser fptk
+-   **Guide**
+    -   [Concepts fondamentaux](guide/core-concepts.md) — Une plongée détaillée dans chaque patron
+    -   [Effets de bord](guide/side-effects.md) — Structurer son application autour d'un noyau pur
+    -   [Migration](guide/migration.md) — Adopter progressivement fptk dans un code impératif
+-   **Recettes**
+    -   [Développement d'API](recipes/api-development.md) — Construire des API web robustes
+    -   [Traitement de données](recipes/data-processing.md) — Pipelines ETL et transformations de données
+-   [Référence de l'API](reference/index.md) — Documentation complète avec les bases théoriques et des exemples
