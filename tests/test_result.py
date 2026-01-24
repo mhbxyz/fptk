@@ -40,3 +40,27 @@ def test_result_unwrap_and_match_and_repr() -> None:
 
     assert repr(Ok(1)) == "Ok(1)"
     assert repr(Err("e")) == "Err('e')"
+
+
+def test_result_zip() -> None:
+    # Both Ok -> Ok of tuple
+    assert Ok(1).zip(Ok("a")) == Ok((1, "a"))
+
+    # First Err -> first Err
+    assert Err("e1").zip(Ok(1)) == Err("e1")
+
+    # Second Err -> second Err
+    assert Ok(1).zip(Err("e2")) == Err("e2")
+
+    # Both Err -> first Err
+    assert Err("e1").zip(Err("e2")) == Err("e1")
+
+
+def test_result_zip_with() -> None:
+    # Both Ok -> apply function
+    assert Ok(2).zip_with(Ok(3), lambda a, b: a + b) == Ok(5)
+    assert Ok("hello").zip_with(Ok(" world"), lambda a, b: a + b) == Ok("hello world")
+
+    # Any Err -> Err (first one)
+    assert Err("e").zip_with(Ok(1), lambda a, b: a + b) == Err("e")
+    assert Ok(1).zip_with(Err("e"), lambda a, b: a + b) == Err("e")

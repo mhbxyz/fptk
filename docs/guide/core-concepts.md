@@ -103,6 +103,7 @@ get_full_name({})                                           # "Anonymous"
 |--------|-------------|
 | `map(f)` | Transform the value if present |
 | `bind(f)` | Chain operations that return Option |
+| `zip(other)` | Combine two Options into tuple |
 | `or_else(f)` | Provide fallback Option |
 | `unwrap_or(default)` | Get value or default |
 

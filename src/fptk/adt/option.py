@@ -94,6 +94,24 @@ class Option[T]:
         """
         return f(self.value) if isinstance(self, Some) else cast(Option[U], NOTHING)
 
+    def zip[U](self: Option[T], other: Option[U]) -> Option[tuple[T, U]]:
+        """Combine two Options into an Option of tuple.
+
+        Returns ``Some((a, b))`` if both are ``Some``; otherwise ``NOTHING``.
+        """
+        if isinstance(self, Some) and isinstance(other, Some):
+            return Some((self.value, other.value))
+        return cast(Option[tuple[T, U]], NOTHING)
+
+    def zip_with[U, R](self: Option[T], other: Option[U], f: Callable[[T, U], R]) -> Option[R]:
+        """Combine two Options with a function.
+
+        Returns ``Some(f(a, b))`` if both are ``Some``; otherwise ``NOTHING``.
+        """
+        if isinstance(self, Some) and isinstance(other, Some):
+            return Some(f(self.value, other.value))
+        return cast(Option[R], NOTHING)
+
     async def map_async[U](self: Option[T], f: Callable[[T], Awaitable[U]]) -> Option[U]:
         """Awaitably transform the value if present; otherwise ``NOTHING``.
 

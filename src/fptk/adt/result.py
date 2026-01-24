@@ -89,6 +89,30 @@ class Result[T, E]:
             return f(self.value)
         return cast(Result[U, E], self)
 
+    def zip[U](self: Result[T, E], other: Result[U, E]) -> Result[tuple[T, U], E]:
+        """Combine two Results into a Result of tuple.
+
+        Returns ``Ok((a, b))`` if both are ``Ok``; otherwise the first ``Err``.
+        """
+        if isinstance(self, Ok) and isinstance(other, Ok):
+            return Ok((self.value, other.value))
+        if isinstance(self, Err):
+            return cast(Result[tuple[T, U], E], self)
+        return cast(Result[tuple[T, U], E], other)
+
+    def zip_with[U, R](
+        self: Result[T, E], other: Result[U, E], f: Callable[[T, U], R]
+    ) -> Result[R, E]:
+        """Combine two Results with a function.
+
+        Returns ``Ok(f(a, b))`` if both are ``Ok``; otherwise the first ``Err``.
+        """
+        if isinstance(self, Ok) and isinstance(other, Ok):
+            return Ok(f(self.value, other.value))
+        if isinstance(self, Err):
+            return cast(Result[R, E], self)
+        return cast(Result[R, E], other)
+
     async def map_async[U](self: Result[T, E], f: Callable[[T], Awaitable[U]]) -> Result[U, E]:
         """Awaitably transform the success value; preserve errors."""
         if isinstance(self, Ok):

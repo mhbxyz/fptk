@@ -44,3 +44,27 @@ def test_option_to_result_and_or_else_and_match() -> None:
 def test_option_repr() -> None:
     assert repr(Some(3)) == "Some(3)"
     assert repr(NOTHING) == "NOTHING"
+
+
+def test_option_zip() -> None:
+    # Both Some -> Some of tuple
+    assert Some(1).zip(Some("a")) == Some((1, "a"))
+
+    # First NOTHING -> NOTHING
+    assert NOTHING.zip(Some(1)) == NOTHING
+
+    # Second NOTHING -> NOTHING
+    assert Some(1).zip(NOTHING) == NOTHING
+
+    # Both NOTHING -> NOTHING
+    assert NOTHING.zip(NOTHING) == NOTHING
+
+
+def test_option_zip_with() -> None:
+    # Both Some -> apply function
+    assert Some(2).zip_with(Some(3), lambda a, b: a + b) == Some(5)
+    assert Some("hello").zip_with(Some(" world"), lambda a, b: a + b) == Some("hello world")
+
+    # Any NOTHING -> NOTHING
+    assert NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING
+    assert Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING
