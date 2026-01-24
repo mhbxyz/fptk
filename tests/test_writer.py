@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fptk.adt.writer import Writer, censor, listen, monoid_list, monoid_str, tell
+from fptk.adt.writer import Monoid, Writer, censor, listen, monoid_list, monoid_str, tell
 
 
 def test_writer_map_bind_run() -> None:
@@ -45,3 +45,51 @@ def test_monoid_str() -> None:
 def test_writer_repr() -> None:
     w = Writer.unit(1, monoid_list)
     assert "Writer" in repr(w)
+
+
+ELEVEN = 11
+FIFTEEN = 15
+TEN = 10.0
+
+
+def test_custom_monoid_sum() -> None:
+    """Test Writer with sum monoid."""
+    monoid_sum: Monoid[int] = Monoid(identity=0, combine=lambda a, b: a + b)
+
+    w = (
+        Writer.unit(5, monoid_sum)
+        .bind(lambda x: tell(x, monoid_sum).map(lambda _: x * 2))
+        .bind(lambda x: tell(x, monoid_sum).map(lambda _: x + 1))
+    )
+
+    value, log = w.run()
+    assert value == ELEVEN
+    assert log == FIFTEEN  # 5 + 10
+
+
+def test_custom_monoid_max() -> None:
+    """Test Writer with max monoid."""
+    monoid_max: Monoid[float] = Monoid(identity=float("-inf"), combine=max)
+
+    w = (
+        tell(5.0, monoid_max)
+        .bind(lambda _: tell(10.0, monoid_max))
+        .bind(lambda _: tell(3.0, monoid_max))
+    )
+
+    _, log = w.run()
+    assert log == TEN
+
+
+def test_custom_monoid_set_union() -> None:
+    """Test Writer with set union monoid."""
+    monoid_set: Monoid[frozenset[str]] = Monoid(identity=frozenset(), combine=lambda a, b: a | b)
+
+    w = (
+        tell(frozenset({"a", "b"}), monoid_set)
+        .bind(lambda _: tell(frozenset({"b", "c"}), monoid_set))
+        .bind(lambda _: tell(frozenset({"d"}), monoid_set))
+    )
+
+    _, log = w.run()
+    assert log == frozenset({"a", "b", "c", "d"})

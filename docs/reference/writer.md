@@ -367,14 +367,36 @@ summary, logs = computation_with_summary().run()
 # logs still contains all entries
 ```
 
-### Custom Monoid
+### Custom Monoids
+
+You can create custom monoids for any type with an identity element and an associative combine operation.
+
+#### Sum Monoid
+
+Track cumulative values like costs, counts, or sizes:
 
 ```python
-# Maximum monoid for tracking peak values
-monoid_max = Monoid(
-    identity=float('-inf'),
-    combine=lambda a, b: max(a, b)
+monoid_sum = Monoid(identity=0, combine=lambda a, b: a + b)
+
+def process_with_cost(data: list) -> Writer[int, list]:
+    return tell(len(data), monoid_sum).map(lambda _: [x * 2 for x in data])
+
+result = (
+    Writer.unit([1, 2, 3], monoid_sum)
+    .bind(process_with_cost)  # cost: 3
+    .bind(process_with_cost)  # cost: 3
 )
+
+value, total_cost = result.run()
+# value = [4, 8, 12], total_cost = 6
+```
+
+#### Max Monoid
+
+Track peak values like maximum memory usage or highest latency:
+
+```python
+monoid_max = Monoid(identity=float('-inf'), combine=max)
 
 def track_max(value: float) -> Writer[float, float]:
     return tell(value, monoid_max).map(lambda _: value)
@@ -383,11 +405,50 @@ result = (
     track_max(5.0)
     .bind(lambda _: track_max(10.0))
     .bind(lambda _: track_max(3.0))
-    .bind(lambda _: track_max(8.0))
 )
 
 _, max_seen = result.run()
 # max_seen = 10.0
+```
+
+#### Set Union Monoid
+
+Collect unique items like tags, categories, or visited nodes:
+
+```python
+monoid_set = Monoid(identity=frozenset(), combine=lambda a, b: a | b)
+
+def tag(labels: set[str]) -> Writer[frozenset[str], None]:
+    return tell(frozenset(labels), monoid_set)
+
+result = (
+    tag({"python", "fp"})
+    .bind(lambda _: tag({"fp", "monad"}))
+    .bind(lambda _: tag({"tutorial"}))
+)
+
+_, all_tags = result.run()
+# all_tags = frozenset({"python", "fp", "monad", "tutorial"})
+```
+
+#### Product Monoid
+
+Calculate combined probabilities or scaling factors:
+
+```python
+monoid_product = Monoid(identity=1.0, combine=lambda a, b: a * b)
+
+def scale(factor: float) -> Writer[float, float]:
+    return tell(factor, monoid_product).map(lambda _: factor)
+
+result = (
+    scale(0.9)
+    .bind(lambda _: scale(0.8))
+    .bind(lambda _: scale(0.95))
+)
+
+_, combined_factor = result.run()
+# combined_factor = 0.684 (0.9 * 0.8 * 0.95)
 ```
 
 ## When to Use Writer
