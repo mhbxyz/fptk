@@ -242,5 +242,5 @@ async def process_batch(items: list[Item], batch_size: int = 10):
 
 -   [`Result`](result.md) — Le type `Result` fondamental.
 -   [`traverse_result_async`](traverse.md) — Pour un parcours asynchrone séquentiel.
--   [Développement d'API](../recipes/api-development.md) — L'asynchrone dans les contextes web.
--   [Traitement de données](../recipes/data-processing.md) — Le traitement par lots asynchrone.
+-   [Développement d'API](../examples/api-development.md) — L'asynchrone dans les contextes web.
+-   [Traitement de données](../examples/data-processing.md) — Le traitement par lots asynchrone.

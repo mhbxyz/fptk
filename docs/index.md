@@ -125,7 +125,7 @@ pip install fptk
     - [Core Concepts](guide/core-concepts.md) — Deep dive into each pattern
     - [Side Effects](guide/side-effects.md) — Structure code with pure cores
     - [Migration](guide/migration.md) — Gradually adopt functional patterns
-- **Recipes**
-    - [API Development](recipes/api-development.md) — Build robust web APIs
-    - [Data Processing](recipes/data-processing.md) — ETL pipelines and transformations
+- **Examples**
+    - [API Development](examples/api-development.md) — Build robust web APIs
+    - [Data Processing](examples/data-processing.md) — ETL pipelines and transformations
 - [Reference](reference/index.md) — Complete API documentation with theory and examples

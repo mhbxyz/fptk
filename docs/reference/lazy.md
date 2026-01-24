@@ -332,6 +332,6 @@ fptk versions provide better type hints and consistent API style.
 
 ## See Also
 
-- [Data Processing Recipe](../recipes/data-processing.md) — Lazy processing in ETL pipelines
+- [Data Processing Example](../examples/data-processing.md) — Lazy processing in ETL pipelines
 - [`traverse`](traverse.md) — For working with collections of Option/Result
 - [`async_tools`](async.md) — For async batch processing

@@ -138,4 +138,4 @@ resultat = validate_all([
 -   [`Result`](result.md) — Le type de base gérant les succès et les échecs.
 -   [`NonEmptyList`](nelist.md) — La structure utilisée pour regrouper les erreurs.
 -   [`traverse_result`](traverse.md) — Pour un traitement de collection avec arrêt immédiat.
--   [Développement d'API](../recipes/api-development.md) — Exemples concrets dans des points d'entrée web.
+-   [Développement d'API](../examples/api-development.md) — Exemples concrets dans des points d'entrée web.

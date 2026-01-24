@@ -50,9 +50,9 @@ nav:
     - Validation: reference/validate.md
     - Lazy Iterators: reference/lazy.md
     - Async Tools: reference/async.md
-  - Recipes:
-    - API Development: recipes/api-development.md
-    - Data Processing: recipes/data-processing.md
+  - Examples:
+    - API Development: examples/api-development.md
+    - Data Processing: examples/data-processing.md
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -92,6 +92,6 @@ plugins:
             Validation: Validation
             Lazy Iterators: Itérateurs paresseux
             Async Tools: Outils async
-            Recipes: Recettes
+            Examples: Exemples
             API Development: Développement API
             Data Processing: Traitement de données

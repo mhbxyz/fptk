@@ -206,6 +206,6 @@ def traiter_fichier(chemin: str):
 
 ## Voir aussi
 
--   [Recette : Traitement de données](../recipes/data-processing.md) — Usage intensif dans les pipelines ETL.
+-   [Exemple : Traitement de données](../examples/data-processing.md) — Usage intensif dans les pipelines ETL.
 -   [`traverse`](traverse.md) — Pour manipuler des collections d'`Option` ou de `Result`.
 -   [`async_tools`](async.md) — Pour le traitement par lots asynchrone.

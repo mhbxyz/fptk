@@ -347,5 +347,5 @@ await gather_results_accumulate([ok1, err1, err2, ok2])
 
 - [`Result`](result.md) — The underlying Result type
 - [`traverse_result_async`](traverse.md) — Sequential async traversal
-- [API Development Recipe](../recipes/api-development.md) — Async in web APIs
-- [Data Processing Recipe](../recipes/data-processing.md) — Async batch processing
+- [API Development Example](../examples/api-development.md) — Async in web APIs
+- [Data Processing Example](../examples/data-processing.md) — Async batch processing

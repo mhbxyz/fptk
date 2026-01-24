@@ -125,7 +125,7 @@ pip install fptk
     -   [Concepts fondamentaux](guide/core-concepts.md) — Une plongée détaillée dans chaque patron
     -   [Effets de bord](guide/side-effects.md) — Structurer son application autour d'un noyau pur
     -   [Migration](guide/migration.md) — Adopter progressivement fptk dans un code impératif
--   **Recettes**
-    -   [Développement d'API](recipes/api-development.md) — Construire des API web robustes
-    -   [Traitement de données](recipes/data-processing.md) — Pipelines ETL et transformations de données
+-   **Exemples**
+    -   [Développement d'API](examples/api-development.md) — Construire des API web robustes
+    -   [Traitement de données](examples/data-processing.md) — Pipelines ETL et transformations de données
 -   [Référence de l'API](reference/index.md) — Documentation complète avec les bases théoriques et des exemples

@@ -391,4 +391,4 @@ validate_all([check1, check2, check3], value)
 - [`Result`](result.md) — The underlying Result type
 - [`NonEmptyList`](nelist.md) — The error collection type
 - [`traverse_result`](traverse.md) — For fail-fast collection processing
-- [API Development Recipe](../recipes/api-development.md) — Validation in web APIs
+- [API Development Example](../examples/api-development.md) — Validation in web APIs
