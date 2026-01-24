@@ -1,32 +1,16 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
-from collections.abc import Awaitable, Callable, Iterable
-from typing import TypeVar
+from collections.abc import Awaitable, Iterable
 
 from fptk.adt.result import Err, Ok, Result
+from fptk.core.func import async_pipe
 
 __all__ = [
     "async_pipe",
     "gather_results",
     "gather_results_accumulate",
 ]
-
-T = TypeVar("T")
-E = TypeVar("E")
-
-
-async def async_pipe(x: object, *funcs: Callable[[object], object]) -> object:
-    """Thread a value through possibly-async unary functions (standalone helper).
-
-    Duplicated here to allow import without touching core.func; both versions are equivalent.
-    """
-    for f in funcs:
-        x = f(x)
-        if inspect.isawaitable(x):
-            x = await x
-    return x
 
 
 async def gather_results[T, E](tasks: Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], E]:
