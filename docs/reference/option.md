@@ -92,6 +92,36 @@ from_nullable(some_value)  # Some(x) if x is not None, else NOTHING
 | `map_async(f)` | `async (T -> U) -> Option[U]` | Async transform |
 | `bind_async(f)` | `async (T -> Option[U]) -> Option[U]` | Async chain |
 
+### or_else: Eager vs Lazy
+
+`or_else` accepts both a direct `Option` value and a callable returning `Option`:
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Eager: value is always evaluated
+result = NOTHING.or_else(Some(42))  # Some(42)
+
+# Lazy: callable only invoked if needed
+result = NOTHING.or_else(lambda: Some(expensive_computation()))
+```
+
+**When to use which:**
+
+| Pattern | Syntax | Use when |
+|---------|--------|----------|
+| Eager | `.or_else(Some(x))` | Default is cheap/already computed |
+| Lazy | `.or_else(lambda: ...)` | Default is expensive or has side effects |
+
+```python
+# Fallback chain with lazy evaluation
+config_value = (
+    from_nullable(os.getenv("MY_VAR"))
+    .or_else(lambda: from_nullable(config_file.get("my_var")))  # Only if env missing
+    .or_else(Some("default"))  # Cheap, can be eager
+)
+```
+
 ## How It Works
 
 ### Data Structure
