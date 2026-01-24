@@ -1,26 +1,26 @@
-# Traitement de donnees
+# Traitement de données
 
-Ce guide montre comment utiliser fptk pour les taches de traitement de donnees : pipelines ETL, validation, traitement par lots et transformations.
+Ce guide montre comment utiliser fptk pour les tâches de traitement de données : pipelines ETL, validation, traitement par lots et transformations.
 
-## Pourquoi des patterns fonctionnels pour le traitement de donnees ?
+## Pourquoi des patterns fonctionnels pour le traitement de données ?
 
-Le code de traitement de donnees souffre souvent de :
+Le code de traitement de données souffre souvent de :
 
 - **Pipelines fragiles** : Un mauvais enregistrement casse tout
-- **Echecs silencieux** : Erreurs avalees ou enregistrees mais non gerees
-- **Problemes de memoire** : Chargement de jeux de donnees entiers quand ce n'est pas necessaire
-- **Difficile a deboguer** : Manque de clarte sur l'emplacement des transformations
+- **Échecs silencieux** : Erreurs avalées ou enregistrées mais non gérées
+- **Problèmes de mémoire** : Chargement de jeux de données entiers quand ce n'est pas nécessaire
+- **Difficile à déboguer** : Manque de clarté sur l'emplacement des transformations
 
 Les patterns fonctionnels aident en :
 
 - Rendant chaque transformation explicite et testable
-- Gerant les erreurs comme des valeurs qui circulent dans le pipeline
-- Utilisant l'evaluation paresseuse pour traiter les donnees efficacement
-- Separant validation, transformation et E/S
+- Gérant les erreurs comme des valeurs qui circulent dans le pipeline
+- Utilisant l'évaluation paresseuse pour traiter les données efficacement
+- Séparant validation, transformation et E/S
 
 ## Pipeline ETL
 
-Un pipeline classique Extract-Transform-Load s'adapte parfaitement a `pipe` :
+Un pipeline classique Extract-Transform-Load s'adapte parfaitement à `pipe` :
 
 ```python
 from fptk.core.func import pipe
@@ -105,9 +105,9 @@ def load_to_db(data):
         return Err(f"Database error: {e}")
 ```
 
-## Traitement paresseux avec les iterateurs
+## Traitement paresseux avec les itérateurs
 
-Pour les grands jeux de donnees, utilisez des iterateurs paresseux pour eviter de tout charger en memoire :
+Pour les grands jeux de données, utilisez des itérateurs paresseux pour éviter de tout charger en mémoire :
 
 ```python
 from fptk.iter.lazy import map_iter, filter_iter, chunk
@@ -127,7 +127,7 @@ def process_large_file(path: str):
             save_batch(batch)
 ```
 
-### Decoupage pour les operations par lots
+### Découpage pour les opérations par lots
 
 ```python
 from fptk.iter.lazy import chunk
@@ -155,7 +155,7 @@ def process_by_category(items):
 
 ## Pipelines de validation
 
-Pour les donnees de formulaire ou les entrees API, accumulez toutes les erreurs de validation :
+Pour les données de formulaire ou les entrées API, accumulez toutes les erreurs de validation :
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -202,7 +202,7 @@ def age_range(field, min_age, max_age):
 
 ## Traitement par lots asynchrone
 
-Pour le traitement limite par les E/S, utilisez async pour paralleliser :
+Pour le traitement limité par les E/S, utilisez async pour paralléliser :
 
 ```python
 from fptk.async_tools import gather_results, gather_results_accumulate
@@ -232,7 +232,7 @@ async def fetch_url(url: str):
 
 ## Transformations composables
 
-Construisez des fonctions de transformation reutilisables :
+Construisez des fonctions de transformation réutilisables :
 
 ```python
 from fptk.core.func import compose, pipe
@@ -257,7 +257,7 @@ def process_user(raw_data):
 
 ## Rapports d'erreurs
 
-Collectez les erreurs sans arreter le pipeline :
+Collectez les erreurs sans arrêter le pipeline :
 
 ```python
 def process_with_report(items):
@@ -275,11 +275,11 @@ def process_with_report(items):
     }
 ```
 
-## Points cles a retenir
+## Points clés à retenir
 
-1. **Utilisez `pipe` pour les etapes de transformation** : Rend le flux de donnees explicite
-2. **Utilisez les iterateurs paresseux pour les grandes donnees** : `map_iter`, `filter_iter`, `chunk`
-3. **Utilisez `validate_all` pour la validation des entrees** : Collecte toutes les erreurs
-4. **Utilisez `Result` partout** : Pas d'echecs silencieux
-5. **Composez de petites transformations** : Construisez des pipelines complexes a partir de fonctions simples
-6. **Separez Extract/Transform/Load** : Chaque etape est testable independamment
+1. **Utilisez `pipe` pour les étapes de transformation** : Rend le flux de données explicite
+2. **Utilisez les itérateurs paresseux pour les grandes données** : `map_iter`, `filter_iter`, `chunk`
+3. **Utilisez `validate_all` pour la validation des entrées** : Collecte toutes les erreurs
+4. **Utilisez `Result` partout** : Pas d'échecs silencieux
+5. **Composez de petites transformations** : Construisez des pipelines complexes à partir de fonctions simples
+6. **Séparez Extract/Transform/Load** : Chaque étape est testable indépendamment

@@ -1,10 +1,10 @@
 # Validation
 
-`fptk.validate` fournit une validation applicative - executant plusieurs verifications et accumulant toutes les erreurs au lieu d'echouer rapidement.
+`fptk.validate` fournit une validation applicative - exécutant plusieurs vérifications et accumulant toutes les erreurs au lieu d'échouer rapidement.
 
 ## Concept : Validation applicative
 
-La composition monadique standard (utilisant `bind`) est **fail-fast** : la premiere erreur arrete la chaine. Mais pour la validation, vous souhaitez souvent **accumuler toutes les erreurs** pour montrer a l'utilisateur tout ce qui ne va pas en une seule fois.
+La composition monadique standard (utilisant `bind`) est **fail-fast** : la première erreur arrête la chaîne. Mais pour la validation, vous souhaitez souvent **accumuler toutes les erreurs** pour montrer à l'utilisateur tout ce qui ne va pas en une seule fois.
 
 ```
 Monadique (fail-fast) :     check1 → Err → stop
@@ -13,11 +13,11 @@ Applicatif (accumule) : check1 → Err, check2 → Err, check3 → Ok → Err([e
 
 Cela est important car :
 
-- **Meilleure UX** : Afficher toutes les erreurs de validation en une fois, pas une a la fois
+- **Meilleure UX** : Afficher toutes les erreurs de validation en une fois, pas une à la fois
 - **Retour complet** : Les utilisateurs peuvent tout corriger en une seule passe
-- **Separation des responsabilites** : La logique de validation reste independante et composable
+- **Séparation des responsabilités** : La logique de validation reste indépendante et composable
 
-### Le probleme : Validation fail-fast
+### Le problème : Validation fail-fast
 
 ```python
 def validate_user(data: dict) -> Result[User, str]:
@@ -48,7 +48,7 @@ result = validate_user({"name": "", "email": "bad", "age": -5})
 # Err(NonEmptyList("Name is required", "Invalid email", "Age must be positive"))
 ```
 
-Toutes les verifications s'executent, toutes les erreurs sont collectees.
+Toutes les vérifications s'exécutent, toutes les erreurs sont collectées.
 
 ## API
 
@@ -63,19 +63,19 @@ def validate_all(
 ) -> Result[T, NonEmptyList[E]]
 ```
 
-**Parametres :**
+**Paramètres :**
 
-- `checks` : Iterable de fonctions de validation, chacune prenant une valeur et retournant `Result[T, E]`
-- `value` : La valeur a valider
+- `checks` : Itérable de fonctions de validation, chacune prenant une valeur et retournant `Result[T, E]`
+- `value` : La valeur à valider
 
 **Retourne :**
 
-- `Ok(value)` si toutes les verifications passent
-- `Err(NonEmptyList[E])` contenant toutes les erreurs si une verification echoue
+- `Ok(value)` si toutes les vérifications passent
+- `Err(NonEmptyList[E])` contenant toutes les erreurs si une vérification échoue
 
 ## Fonctionnement
 
-### Implementation
+### Implémentation
 
 ```python
 def validate_all(checks, value):
@@ -96,11 +96,11 @@ def validate_all(checks, value):
     return Ok(cur) if errors is None else Err(errors)
 ```
 
-Points cles :
+Points clés :
 
-1. **Toutes les verifications s'executent** : Contrairement a `bind`, nous ne nous arretons pas a la premiere erreur
-2. **Les erreurs s'accumulent** : Collectees dans une `NonEmptyList`
-3. **La valeur peut etre transformee** : Si une verification retourne `Ok(transformed)`, les verifications suivantes utilisent cette valeur
+1. **Toutes les vérifications s'exécutent** : Contrairement à `bind`, nous ne nous arrêtons pas à la première erreur
+2. **Les erreurs s'accumulent** : Collectées dans une `NonEmptyList`
+3. **La valeur peut être transformée** : Si une vérification retourne `Ok(transformed)`, les vérifications suivantes utilisent cette valeur
 4. **Garantie NonEmptyList** : Si nous retournons `Err`, il y a au moins une erreur
 
 ### Les validateurs comme fonctions
@@ -189,7 +189,7 @@ result = validate_signup(bad_form)
 # ))
 ```
 
-### Validation de requete API
+### Validation de requête API
 
 ```python
 from fptk.validate import validate_all
@@ -231,7 +231,7 @@ def process_request(request: dict):
     )
 ```
 
-### Bibliotheque de validateurs reutilisables
+### Bibliothèque de validateurs réutilisables
 
 ```python
 from fptk.validate import validate_all
@@ -288,7 +288,7 @@ user_validators = [
 
 ### Transformation pendant la validation
 
-Les validateurs peuvent transformer les donnees :
+Les validateurs peuvent transformer les données :
 
 ```python
 def normalize_email(data: dict) -> Result[dict, str]:
@@ -314,7 +314,7 @@ result = validate_all([
 # The validation runs on normalized data
 ```
 
-### Validation imbriquee
+### Validation imbriquée
 
 ```python
 def validate_address(data: dict) -> Result[dict, NonEmptyList[str]]:
@@ -359,21 +359,21 @@ def validate_user_with_address(data: dict) -> Result[dict, NonEmptyList[str]]:
 **Utilisez validate_all quand :**
 
 - Vous voulez afficher toutes les erreurs de validation en une fois
-- Vous validez une saisie utilisateur (formulaires, requetes API)
-- Chaque validation est independante
+- Vous validez une saisie utilisateur (formulaires, requêtes API)
+- Chaque validation est indépendante
 - Une meilleure UX est importante
 
-**Utilisez une chaine de bind quand :**
+**Utilisez une chaîne de bind quand :**
 
-- Les validations dependent les unes des autres
-- Vous n'avez besoin que de la premiere erreur
-- Le comportement court-circuit est souhaite
+- Les validations dépendent les unes des autres
+- Vous n'avez besoin que de la première erreur
+- Le comportement court-circuit est souhaité
 
 ## validate_all vs traverse_result
 
 | Fonction | Comportement des erreurs | Type de retour |
 |----------|---------------|-------------|
-| `traverse_result` | Fail-fast (premiere erreur) | `Result[list[T], E]` |
+| `traverse_result` | Fail-fast (première erreur) | `Result[list[T], E]` |
 | `validate_all` | Accumule toutes les erreurs | `Result[T, NonEmptyList[E]]` |
 
 ```python
@@ -391,4 +391,4 @@ validate_all([check1, check2, check3], value)
 - [`Result`](result.md) - Le type Result sous-jacent
 - [`NonEmptyList`](nelist.md) - Le type de collection d'erreurs
 - [`traverse_result`](traverse.md) - Pour le traitement fail-fast de collections
-- [Recette developpement API](../recipes/api-development.md) - Validation dans les APIs web
+- [Recette développement API](../recipes/api-development.md) - Validation dans les APIs web

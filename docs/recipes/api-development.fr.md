@@ -1,24 +1,24 @@
-# Developpement d'API
+# Développement d'API
 
-Ce guide montre comment utiliser les patterns fptk pour construire des API web robustes. Nous couvrirons les pipelines de traitement des requetes, la gestion des erreurs, les operations de base de donnees, les endpoints asynchrones et les middleware.
+Ce guide montre comment utiliser les patterns fptk pour construire des API web robustes. Nous couvrirons les pipelines de traitement des requêtes, la gestion des erreurs, les opérations de base de données, les endpoints asynchrones et les middleware.
 
 ## Pourquoi des patterns fonctionnels pour les API ?
 
-Le code d'API est particulierement sujet a certains problemes :
+Le code d'API est particulièrement sujet à certains problèmes :
 
-- **Gestion des erreurs en spaghetti** : des blocs try/except partout, des reponses d'erreur inconsistantes
-- **Echecs caches** : des fonctions qui peuvent echouer mais ne le rendent pas evident
-- **Difficile a tester** : des handlers qui font trop de choses, fortement couples aux frameworks
+- **Gestion des erreurs en spaghetti** : des blocs try/except partout, des réponses d'erreur inconsistantes
+- **Échecs cachés** : des fonctions qui peuvent échouer mais ne le rendent pas évident
+- **Difficile à tester** : des handlers qui font trop de choses, fortement couplés aux frameworks
 
 Les patterns fonctionnels aident en :
 
 - Rendant la gestion des erreurs explicite et composable
-- Separant les responsabilites en petites fonctions testables
-- Creant un flux de donnees coherent a travers des pipelines
+- Séparant les responsabilités en petites fonctions testables
+- Créant un flux de données cohérent à travers des pipelines
 
-## Pipeline de traitement des requetes
+## Pipeline de traitement des requêtes
 
-Une requete API passe typiquement par plusieurs etapes : parse → validate → process → respond. C'est naturellement adapte a `pipe` :
+Une requête API passe typiquement par plusieurs étapes : parse → validate → process → respond. C'est naturellement adapté à `pipe` :
 
 ```python
 from fptk.core.func import pipe, try_catch
@@ -67,11 +67,11 @@ def format_response(user: dict):
     return {'status': 'success', 'data': {'user': user}}
 ```
 
-Chaque fonction fait une seule chose. Le pipeline rend le flux evident. Les erreurs se propagent automatiquement.
+Chaque fonction fait une seule chose. Le pipeline rend le flux évident. Les erreurs se propagent automatiquement.
 
-## Reponses d'erreur coherentes
+## Réponses d'erreur cohérentes
 
-Les API ont besoin d'un formatage d'erreur coherent. Utilisez `map_err` pour transformer les erreurs en un format standard :
+Les API ont besoin d'un formatage d'erreur cohérent. Utilisez `map_err` pour transformer les erreurs en un format standard :
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -119,9 +119,9 @@ def format_error(error):
     }
 ```
 
-## Operations de base de donnees
+## Opérations de base de données
 
-Le code de base de donnees est l'endroit ou `try_catch` et `Result` brillent vraiment :
+Le code de base de données est l'endroit où `try_catch` et `Result` brillent vraiment :
 
 ```python
 from fptk.core.func import pipe, try_catch
@@ -175,7 +175,7 @@ def combine_data(data):
 
 ## Endpoints asynchrones
 
-Pour les operations asynchrones, utilisez `gather_results` pour gerer plusieurs taches concurrentes :
+Pour les opérations asynchrones, utilisez `gather_results` pour gérer plusieurs tâches concurrentes :
 
 ```python
 from fptk.core.func import async_pipe
@@ -217,7 +217,7 @@ def format_batch_response(users):
 
 ## Pattern middleware
 
-Les middleware se composent naturellement avec des fonctions d'ordre superieur :
+Les middleware se composent naturellement avec des fonctions d'ordre supérieur :
 
 ```python
 def with_auth(handler):
@@ -253,11 +253,11 @@ def get_user(request):
     return fetch_user(int(user_id))
 ```
 
-## Points cles a retenir
+## Points clés à retenir
 
-1. **Utilisez `pipe` pour le flux des requetes** : Rend les etapes explicites et faciles a modifier
-2. **Utilisez `Result` pour toutes les operations qui peuvent echouer** : Pas d'exceptions cachees
-3. **Utilisez `validate_all` pour la validation des entrees** : Affiche toutes les erreurs en une fois
-4. **Utilisez `try_catch` pour encapsuler les appels externes** : Base de donnees, API, E/S fichier
-5. **Gardez les effets de bord aux extremites** : Logique pure au milieu, E/S aux frontieres
-6. **Composez les middleware avec des fonctions d'ordre superieur** : Separation claire des responsabilites
+1. **Utilisez `pipe` pour le flux des requêtes** : Rend les étapes explicites et faciles à modifier
+2. **Utilisez `Result` pour toutes les opérations qui peuvent échouer** : Pas d'exceptions cachées
+3. **Utilisez `validate_all` pour la validation des entrées** : Affiche toutes les erreurs en une fois
+4. **Utilisez `try_catch` pour encapsuler les appels externes** : Base de données, API, E/S fichier
+5. **Gardez les effets de bord aux extrémités** : Logique pure au milieu, E/S aux frontières
+6. **Composez les middleware avec des fonctions d'ordre supérieur** : Séparation claire des responsabilités

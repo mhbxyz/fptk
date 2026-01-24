@@ -1,14 +1,14 @@
 # Outils Async
 
-`fptk.async_tools` fournit des utilitaires pour travailler avec les operations async et les types `Result` ensemble.
+`fptk.async_tools` fournit des utilitaires pour travailler avec les opérations async et les types `Result` ensemble.
 
 ## Concept : Async et Result
 
-Lorsque vous travaillez avec du code async, les operations retournent souvent des types `Result` pour gerer les erreurs. Vous avez frequemment besoin de :
+Lorsque vous travaillez avec du code async, les opérations retournent souvent des types `Result` pour gérer les erreurs. Vous avez fréquemment besoin de :
 
-1. Executer plusieurs operations async en parallele
-2. Collecter leurs resultats dans un seul `Result`
-3. Gerer les erreurs de maniere appropriee (fail-fast ou accumulation)
+1. Exécuter plusieurs opérations async en parallèle
+2. Collecter leurs résultats dans un seul `Result`
+3. Gérer les erreurs de manière appropriée (fail-fast ou accumulation)
 
 ```python
 # Multiple async operations that might fail
@@ -22,9 +22,9 @@ users = await gather_results([
 
 Cela est important car :
 
-- **Execution concurrente** : Executez les operations I/O en parallele
-- **Gestion d'erreurs unifiee** : Combinez les patterns async et Result
-- **Semantique coherente** : Choisissez fail-fast ou accumulation d'erreurs
+- **Exécution concurrente** : Exécutez les opérations I/O en parallèle
+- **Gestion d'erreurs unifiée** : Combinez les patterns async et Result
+- **Sémantique cohérente** : Choisissez fail-fast ou accumulation d'erreurs
 
 ## API
 
@@ -32,15 +32,15 @@ Cela est important car :
 
 | Fonction | Signature | Description |
 |----------|-----------|-------------|
-| `async_pipe(x, *fns)` | `async (T, *Callables) -> U` | Passe une valeur a travers des fonctions async/sync |
-| `gather_results(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], E]` | Collecte les resultats, fail-fast |
-| `gather_results_accumulate(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], list[E]]` | Collecte les resultats, accumule les erreurs |
+| `async_pipe(x, *fns)` | `async (T, *Callables) -> U` | Passe une valeur à travers des fonctions async/sync |
+| `gather_results(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], E]` | Collecte les résultats, fail-fast |
+| `gather_results_accumulate(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], list[E]]` | Collecte les résultats, accumule les erreurs |
 
 ## Fonctionnement
 
 ### `async_pipe`
 
-Passe une valeur a travers une sequence de fonctions, en attendant celles qui retournent des awaitables :
+Passe une valeur à travers une séquence de fonctions, en attendant celles qui retournent des awaitables :
 
 ```python
 async def async_pipe(x, *funcs):
@@ -51,11 +51,11 @@ async def async_pipe(x, *funcs):
     return x
 ```
 
-Permet de melanger des fonctions sync et async dans le meme pipeline.
+Permet de mélanger des fonctions sync et async dans le même pipeline.
 
 ### `gather_results`
 
-Execute toutes les taches en parallele, retourne la premiere erreur ou tous les succes :
+Exécute toutes les tâches en parallèle, retourne la première erreur ou tous les succès :
 
 ```python
 async def gather_results(tasks):
@@ -75,7 +75,7 @@ async def gather_results(tasks):
     return Ok(values)
 ```
 
-**Note** : Toutes les taches s'executent jusqu'a la fin (pas d'annulation a la premiere erreur).
+**Note** : Toutes les tâches s'exécutent jusqu'à la fin (pas d'annulation à la première erreur).
 
 ### `gather_results_accumulate`
 
@@ -101,7 +101,7 @@ async def gather_results_accumulate(tasks):
 
 ## Exemples
 
-### Recuperation concurrente basique
+### Récupération concurrente basique
 
 ```python
 from fptk.async_tools import gather_results
@@ -181,7 +181,7 @@ response = await async_pipe(
 )
 ```
 
-### Appels API paralleles
+### Appels API parallèles
 
 ```python
 from fptk.async_tools import gather_results
@@ -256,7 +256,7 @@ result = await gather_results([fetch_user(id) for id in ids])
 # - Resource constraints: use batched parallel
 ```
 
-### Recuperation d'erreurs
+### Récupération d'erreurs
 
 ```python
 from fptk.async_tools import gather_results_accumulate
@@ -308,9 +308,9 @@ async def fetch_all_with_timeout(ids: list[int]) -> Result[list[User], str]:
 
 ## Comparaison : gather_results vs gather_results_accumulate
 
-| Fonction | A la premiere erreur | Type de retour | A utiliser quand |
+| Fonction | À la première erreur | Type de retour | À utiliser quand |
 |----------|---------------|-------------|----------|
-| `gather_results` | S'arrete (mais les taches continuent) | `Result[list[T], E]` | Vous n'avez besoin que de la premiere erreur |
+| `gather_results` | S'arrête (mais les tâches continuent) | `Result[list[T], E]` | Vous n'avez besoin que de la première erreur |
 | `gather_results_accumulate` | Collecte toutes | `Result[list[T], list[E]]` | Vous voulez toutes les erreurs |
 
 ```python
@@ -327,25 +327,25 @@ await gather_results_accumulate([ok1, err1, err2, ok2])
 
 **Utilisez gather_results quand :**
 
-- Vous executez des operations async independantes en parallele
+- Vous exécutez des opérations async indépendantes en parallèle
 - Vous voulez un comportement fail-fast
-- Vous recuperez plusieurs ressources en parallele
+- Vous récupérez plusieurs ressources en parallèle
 
 **Utilisez gather_results_accumulate quand :**
 
 - Vous avez besoin de voir toutes les erreurs
-- Vous validez plusieurs elements en parallele
+- Vous validez plusieurs éléments en parallèle
 - Vous construisez des rapports d'erreurs complets
 
 **Utilisez async_pipe quand :**
 
 - Vous construisez des pipelines de transformation async
-- Vous melangez des fonctions sync et async
-- Vous voulez un flux de donnees lineaire et lisible
+- Vous mélangez des fonctions sync et async
+- Vous voulez un flux de données linéaire et lisible
 
 ## Voir aussi
 
 - [`Result`](result.md) - Le type Result sous-jacent
-- [`traverse_result_async`](traverse.md) - Traversal async sequentiel
-- [Recette developpement API](../recipes/api-development.md) - Async dans les APIs web
-- [Recette traitement de donnees](../recipes/data-processing.md) - Traitement par lots async
+- [`traverse_result_async`](traverse.md) - Traversal async séquentiel
+- [Recette développement API](../recipes/api-development.md) - Async dans les APIs web
+- [Recette traitement de données](../recipes/data-processing.md) - Traitement par lots async

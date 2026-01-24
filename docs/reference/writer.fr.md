@@ -1,12 +1,12 @@
 # Writer
 
-`fptk.adt.writer` fournit la monade `Writer` pour des calculs qui produisent une valeur accompagnee d'un journal accumule. Elle separe les preoccupations "quoi calculer" de "quoi enregistrer".
+`fptk.adt.writer` fournit la monade `Writer` pour des calculs qui produisent une valeur accompagnée d'un journal accumulé. Elle sépare les préoccupations "quoi calculer" de "quoi enregistrer".
 
 ## Concept : La monade Writer
 
-La monade Writer represente des calculs qui produisent a la fois une valeur et un journal qui s'accumule a travers les operations. Le journal peut etre n'importe quel **monoid** — un type avec un element identite et une operation de combinaison associative.
+La monade Writer représente des calculs qui produisent à la fois une valeur et un journal qui s'accumule à travers les opérations. Le journal peut être n'importe quel **monoïde** — un type avec un élément identité et une opération de combinaison associative.
 
-Considerez-la comme : **un calcul qui maintient un journal courant**.
+Considérez-la comme : **un calcul qui maintient un journal courant**.
 
 ```python
 Writer[W, A]  ≈  (A, W)  # where W is a Monoid
@@ -14,7 +14,7 @@ Writer[W, A]  ≈  (A, W)  # where W is a Monoid
 
 Un `Writer[list[str], int]` est un calcul qui produit un `int` tout en accumulant une liste de messages de journal.
 
-### Le probleme : La journalisation melee a la logique
+### Le problème : La journalisation mêlée à la logique
 
 ```python
 def process(data, logger):
@@ -59,21 +59,21 @@ for log in logs:
     print(log)
 ```
 
-Le calcul est pur. Les journaux sont collectes, pas ecrits. Nous pouvons les inspecter, les filtrer ou les rediriger.
+Le calcul est pur. Les journaux sont collectés, pas écrits. Nous pouvons les inspecter, les filtrer ou les rediriger.
 
-## Concept : Les Monoids
+## Concept : Les Monoïdes
 
-Un **Monoid** est un type avec :
+Un **Monoïde** est un type avec :
 
-1. Un **element identite** (valeur vide) : `e`
-2. Une **operation de combinaison associative** : `combine(a, combine(b, c)) == combine(combine(a, b), c)`
+1. Un **élément identité** (valeur vide) : `e`
+2. Une **opération de combinaison associative** : `combine(a, combine(b, c)) == combine(combine(a, b), c)`
 
-Monoids courants :
+Monoïdes courants :
 
-| Type | Identite | Combinaison |
+| Type | Identité | Combinaison |
 |------|----------|-------------|
-| `list` | `[]` | `+` (concatenation) |
-| `str` | `""` | `+` (concatenation) |
+| `list` | `[]` | `+` (concaténation) |
+| `str` | `""` | `+` (concaténation) |
 | `int` (somme) | `0` | `+` (addition) |
 | `int` (produit) | `1` | `*` (multiplication) |
 
@@ -107,13 +107,13 @@ w = Writer.unit(42, monoid_list)
 w = Writer(42, ["started"], monoid_list)
 ```
 
-### Methodes
+### Méthodes
 
-| Methode | Signature | Description |
+| Méthode | Signature | Description |
 |---------|-----------|-------------|
-| `unit(value, monoid)` | `classmethod` | Cree avec un journal vide |
+| `unit(value, monoid)` | `classmethod` | Crée avec un journal vide |
 | `map(f)` | `(A -> B) -> Writer[W, B]` | Transforme la valeur |
-| `bind(f)` | `(A -> Writer[W, B]) -> Writer[W, B]` | Chaine, en combinant les journaux |
+| `bind(f)` | `(A -> Writer[W, B]) -> Writer[W, B]` | Chaîne, en combinant les journaux |
 | `run()` | `() -> (A, W)` | Extrait la valeur et le journal |
 
 ### Fonctions
@@ -124,19 +124,19 @@ w = Writer(42, ["started"], monoid_list)
 | `listen(writer)` | `Writer[W, A] -> Writer[W, (A, W)]` | Obtient la valeur et le journal en paire |
 | `censor(f, writer)` | `(W -> W, Writer[W, A]) -> Writer[W, A]` | Modifie le journal |
 
-### Exigences du Monoid
+### Exigences du Monoïde
 
-Certaines fonctions necessitent un parametre monoid, d'autres non :
+Certaines fonctions nécessitent un paramètre monoïde, d'autres non :
 
-| Fonction | Necessite Monoid ? | Pourquoi |
+| Fonction | Nécessite Monoïde ? | Pourquoi |
 |----------|-------------------|----------|
-| `Writer(v, log, m)` | Oui | Cree un nouveau Writer |
-| `Writer.unit(v, m)` | Oui | Cree un nouveau Writer |
-| `tell(log, m)` | Oui | Cree un nouveau Writer |
-| `listen(w)` | Non | Utilise le monoid du Writer existant |
-| `censor(f, w)` | Non | Utilise le monoid du Writer existant |
+| `Writer(v, log, m)` | Oui | Crée un nouveau Writer |
+| `Writer.unit(v, m)` | Oui | Crée un nouveau Writer |
+| `tell(log, m)` | Oui | Crée un nouveau Writer |
+| `listen(w)` | Non | Utilise le monoïde du Writer existant |
+| `censor(f, w)` | Non | Utilise le monoïde du Writer existant |
 
-Les fonctions qui **creent** un Writer ont besoin du monoid pour savoir comment combiner les journaux plus tard. Les fonctions qui **operent sur** un Writer existant ont deja acces a son monoid.
+Les fonctions qui **créent** un Writer ont besoin du monoïde pour savoir comment combiner les journaux plus tard. Les fonctions qui **opèrent sur** un Writer existant ont déjà accès à son monoïde.
 
 ```python
 from fptk.adt.writer import Writer, tell, listen, censor, monoid_list
@@ -150,18 +150,18 @@ w3 = listen(w1)                          # Uses w1's monoid
 w4 = censor(lambda logs: logs[-1:], w1)  # Uses w1's monoid
 ```
 
-### Monoids integres
+### Monoïdes intégrés
 
-| Monoid | Description |
+| Monoïde | Description |
 |--------|-------------|
-| `monoid_list` | Concatenation de listes |
-| `monoid_str` | Concatenation de chaines |
+| `monoid_list` | Concaténation de listes |
+| `monoid_str` | Concaténation de chaînes |
 
 ## Fonctionnement
 
-### Structure de donnees
+### Structure de données
 
-Writer stocke une valeur, un journal et le monoid pour combiner les journaux :
+Writer stocke une valeur, un journal et le monoïde pour combiner les journaux :
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -185,7 +185,7 @@ class Writer[W, A]:
 
 ### Le Functor : `map`
 
-`map` transforme la valeur, en preservant le journal :
+`map` transforme la valeur, en préservant le journal :
 
 ```python
 def map(self, f):
@@ -194,7 +194,7 @@ def map(self, f):
 
 ### La Monade : `bind`
 
-`bind` sequence les calculs et combine leurs journaux :
+`bind` séquence les calculs et combine leurs journaux :
 
 ```python
 def bind(self, f):
@@ -206,9 +206,9 @@ def bind(self, f):
     )
 ```
 
-Point cle : les journaux des deux calculs sont combines en utilisant l'operation `combine` du monoid.
+Point clé : les journaux des deux calculs sont combinés en utilisant l'opération `combine` du monoïde.
 
-### Operations Writer
+### Opérations Writer
 
 ```python
 def tell(log, monoid):
@@ -251,7 +251,7 @@ value, logs = result.run()
 # logs = ["Doubled 5 to 10", "Added 10 to 10, got 20"]
 ```
 
-### Collecte de metriques
+### Collecte de métriques
 
 ```python
 from dataclasses import dataclass
@@ -367,13 +367,13 @@ summary, logs = computation_with_summary().run()
 # logs still contains all entries
 ```
 
-### Monoids personnalises
+### Monoïdes personnalisés
 
-Vous pouvez creer des monoids personnalises pour tout type avec un element identite et une operation de combinaison associative.
+Vous pouvez créer des monoïdes personnalisés pour tout type avec un élément identité et une opération de combinaison associative.
 
-#### Monoid de somme
+#### Monoïde de somme
 
-Suivre des valeurs cumulatives comme les couts, les comptages ou les tailles :
+Suivre des valeurs cumulatives comme les coûts, les comptages ou les tailles :
 
 ```python
 monoid_sum = Monoid(identity=0, combine=lambda a, b: a + b)
@@ -391,9 +391,9 @@ value, total_cost = result.run()
 # value = [4, 8, 12], total_cost = 6
 ```
 
-#### Monoid de maximum
+#### Monoïde de maximum
 
-Suivre les valeurs de pointe comme l'utilisation maximale de memoire ou la latence la plus elevee :
+Suivre les valeurs de pointe comme l'utilisation maximale de mémoire ou la latence la plus élevée :
 
 ```python
 monoid_max = Monoid(identity=float('-inf'), combine=max)
@@ -411,9 +411,9 @@ _, max_seen = result.run()
 # max_seen = 10.0
 ```
 
-#### Monoid d'union d'ensembles
+#### Monoïde d'union d'ensembles
 
-Collecter des elements uniques comme des tags, des categories ou des noeuds visites :
+Collecter des éléments uniques comme des tags, des catégories ou des noeuds visités :
 
 ```python
 monoid_set = Monoid(identity=frozenset(), combine=lambda a, b: a | b)
@@ -431,9 +431,9 @@ _, all_tags = result.run()
 # all_tags = frozenset({"python", "fp", "monad", "tutorial"})
 ```
 
-#### Monoid de produit
+#### Monoïde de produit
 
-Calculer des probabilites combinees ou des facteurs d'echelle :
+Calculer des probabilités combinées ou des facteurs d'échelle :
 
 ```python
 monoid_product = Monoid(identity=1.0, combine=lambda a, b: a * b)
@@ -455,30 +455,30 @@ _, combined_factor = result.run()
 
 **Utilisez Writer lorsque :**
 
-- Vous voulez accumuler des journaux/metriques aux cotes des calculs
-- Vous avez besoin de pistes d'audit ou de tracage
-- Vous voulez separer les preoccupations de journalisation de la logique metier
+- Vous voulez accumuler des journaux/métriques aux côtés des calculs
+- Vous avez besoin de pistes d'audit ou de traçage
+- Vous voulez séparer les préoccupations de journalisation de la logique métier
 - Vous avez besoin d'une journalisation pure et testable
 
 **N'utilisez pas Writer lorsque :**
 
-- Les journaux doivent etre ecrits immediatement (utilisez des systemes d'effets)
-- Le journal pourrait croitre indefiniment (problemes de memoire)
-- Des cas simples ou une journalisation explicite est plus claire
+- Les journaux doivent être écrits immédiatement (utilisez des systèmes d'effets)
+- Le journal pourrait croître indéfiniment (problèmes de mémoire)
+- Des cas simples où une journalisation explicite est plus claire
 
 ## Writer vs autres patterns
 
 | Pattern | Quand l'utiliser |
 |---------|------------------|
 | Monade Writer | Accumulation de journal pure, composable |
-| Injection de logger | Lorsque vous avez besoin d'E/S immediates |
-| Logger global | Applications simples (eviter pour la testabilite) |
+| Injection de logger | Lorsque vous avez besoin d'E/S immédiates |
+| Logger global | Applications simples (éviter pour la testabilité) |
 | Monade State | Lorsque vous devez lire/modifier le journal |
 
-Writer est particulierement utile pour le tracage, l'audit et la collecte de metriques de maniere pure et composable.
+Writer est particulièrement utile pour le traçage, l'audit et la collecte de métriques de manière pure et composable.
 
 ## Voir aussi
 
-- [`Reader`](reader.md) — Acces a l'environnement en lecture seule
-- [`State`](state.md) — Lire et ecrire l'etat
-- [Effets de bord](../guide/side-effects.md) — Coeurs purs avec effets aux frontieres
+- [`Reader`](reader.md) — Accès à l'environnement en lecture seule
+- [`State`](state.md) — Lire et écrire l'état
+- [Effets de bord](../guide/side-effects.md) — Coeurs purs avec effets aux frontières

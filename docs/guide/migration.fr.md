@@ -1,12 +1,12 @@
-# Guide de Migration
+# Guide de migration
 
 Ce guide montre comment adopter progressivement les patrons fptk dans votre code Python existant. Chaque niveau s'appuie sur le précédent, vous pouvez donc commencer petit et ajouter des fonctionnalités selon vos besoins.
 
-## Niveau 1 : Composition de Fonctions
+## Niveau 1 : Composition de fonctions
 
 **Commencez ici** — Remplacez les appels de fonctions imbriqués par `pipe()`.
 
-### Avant : Appels Imbriqués
+### Avant : Appels imbriqués
 
 ```python
 def process_data(data):
@@ -20,7 +20,7 @@ def process_data(data):
     return None
 ```
 
-### Après : Pipeline Linéaire
+### Après : Pipeline linéaire
 
 ```python
 from fptk.core.func import pipe
@@ -41,11 +41,11 @@ def process_data(data):
 - Plus facile d'ajouter/supprimer des étapes
 - Plus facile de tester les fonctions individuellement
 
-## Niveau 2 : Gestion des Erreurs avec Result
+## Niveau 2 : Gestion des erreurs avec Result
 
 **Ajoutez une gestion d'erreurs appropriée** — Remplacez les exceptions et les vérifications de None par `Result`.
 
-### Avant : Gestion des Exceptions
+### Avant : Gestion des exceptions
 
 ```python
 def create_user(email, password):
@@ -61,7 +61,7 @@ def create_user(email, password):
         return None
 ```
 
-### Après : Flux Basé sur Result
+### Après : Flux basé sur Result
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -91,11 +91,11 @@ def save_to_db_safe(email, hashed):
 - Gestion des erreurs composable
 - Pas de propagation d'exceptions
 
-## Niveau 3 : Valeurs Optionnelles avec Option
+## Niveau 3 : Valeurs optionnelles avec Option
 
 **Gérez les données manquantes en toute sécurité** — Remplacez les vérifications de None par `Option`.
 
-### Avant : Vérifications de None Partout
+### Avant : Vérifications de None partout
 
 ```python
 def get_display_name(user):
@@ -133,11 +133,11 @@ def get_display_name(user):
 - Gestion explicite de l'absence
 - Opérations composables
 
-## Niveau 4 : Accumulation de Validation
+## Niveau 4 : Accumulation de validation
 
 **Collectez toutes les erreurs d'un coup** — Remplacez la validation fail-fast par l'accumulation d'erreurs.
 
-### Avant : Validation Fail-Fast
+### Avant : Validation fail-fast
 
 ```python
 def validate_user(user):
@@ -150,7 +150,7 @@ def validate_user(user):
     return True, None
 ```
 
-### Après : Accumuler les Erreurs
+### Après : Accumuler les erreurs
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -170,11 +170,11 @@ def validate_user(user):
 - Meilleure expérience utilisateur
 - API de validation cohérente
 
-## Niveau 5 : Collections Paresseuses
+## Niveau 5 : Collections paresseuses
 
 **Traitez les grands ensembles de données efficacement** — Remplacez les listes par des itérateurs paresseux.
 
-### Avant : Tout Charger en Mémoire
+### Avant : Tout charger en mémoire
 
 ```python
 def process_logs(logs):
@@ -187,7 +187,7 @@ def process_logs(logs):
     return errors
 ```
 
-### Après : Traitement Paresseux
+### Après : Traitement paresseux
 
 ```python
 from fptk.iter.lazy import map_iter, filter_iter
@@ -206,11 +206,11 @@ def process_logs(logs):
 - Étapes de traitement composables
 - Ne traite que ce dont vous avez besoin
 
-## Niveau 6 : Opérations Asynchrones
+## Niveau 6 : Opérations asynchrones
 
 **Gérez la concurrence en toute sécurité** — Utilisez `gather_results` pour les opérations asynchrones.
 
-### Avant : Coordination Asynchrone Manuelle
+### Avant : Coordination asynchrone manuelle
 
 ```python
 async def fetch_user_data(user_ids):
@@ -225,7 +225,7 @@ async def fetch_user_data(user_ids):
     return data
 ```
 
-### Après : Concurrence Basée sur Result
+### Après : Concurrence basée sur Result
 
 ```python
 from fptk.async_tools import gather_results
@@ -241,9 +241,9 @@ async def fetch_user_data(user_ids):
 - Code asynchrone propre
 - Types d'erreurs cohérents
 
-## Patrons de Migration Courants
+## Patrons de migration courants
 
-### Conversion du Code Basé sur les Exceptions
+### Conversion du code basé sur les exceptions
 
 ```python
 # Before
@@ -257,7 +257,7 @@ def risky_operation(x):
     return Ok(x * 2) if x >= 0 else Err("Negative value")
 ```
 
-### Conversion des Fonctions Retournant None
+### Conversion des fonctions retournant None
 
 ```python
 # Before
@@ -271,7 +271,7 @@ def find_user(user_id):
     return from_nullable(users_db.get(user_id))
 ```
 
-### Conversion des Fonctions de Validation
+### Conversion des fonctions de validation
 
 ```python
 # Before
@@ -283,12 +283,12 @@ def validate_email(email):
     return Ok(email) if '@' in email else Err("Invalid email")
 ```
 
-## Stratégie de Migration
+## Stratégie de migration
 
-1. **Commencez Petit** : Commencez avec `pipe()` dans une seule fonction
-2. **Ajoutez la Gestion d'Erreurs** : Convertissez progressivement les fonctions basées sur les exceptions vers `Result`
-3. **Gérez les Optionnels** : Remplacez les vérifications de None par `Option`
-4. **Montez en Puissance** : Ajoutez la validation, l'asynchrone et les patrons avancés selon vos besoins
+1. **Commencez petit** : Commencez avec `pipe()` dans une seule fonction
+2. **Ajoutez la gestion d'erreurs** : Convertissez progressivement les fonctions basées sur les exceptions vers `Result`
+3. **Gérez les optionnels** : Remplacez les vérifications de None par `Option`
+4. **Montez en puissance** : Ajoutez la validation, l'asynchrone et les patrons avancés selon vos besoins
 
 **Rappelez-vous :**
 

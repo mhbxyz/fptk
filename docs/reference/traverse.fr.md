@@ -1,15 +1,15 @@
 # Traverse
 
-`fptk.adt.traverse` fournit des operations pour travailler avec des collections de valeurs `Option` ou `Result`, en les "retournant" tout en gerant les echecs.
+`fptk.adt.traverse` fournit des opérations pour travailler avec des collections de valeurs `Option` ou `Result`, en les "retournant" tout en gérant les échecs.
 
 ## Concept : Traverse et Sequence
 
-Lorsque vous avez une liste de calculs susceptibles d'echouer, vous souhaitez souvent :
+Lorsque vous avez une liste de calculs susceptibles d'échouer, vous souhaitez souvent :
 
 1. **Sequence** : Transformer `list[Option[T]]` en `Option[list[T]]`
-2. **Traverse** : Appliquer une fonction sur une liste, puis sequencer les resultats
+2. **Traverse** : Appliquer une fonction sur une liste, puis séquencer les résultats
 
-Ces operations "inversent" la structure des conteneurs :
+Ces opérations "inversent" la structure des conteneurs :
 
 ```
 list[Option[T]]  →  Option[list[T]]
@@ -18,11 +18,11 @@ list[Result[T, E]]  →  Result[list[T], E]
 
 Cela est important car :
 
-- **Semantique fail-fast** : Arret au premier `Nothing` ou `Err`
-- **Resultats tout-ou-rien** : Soit tout reussit, soit vous obtenez le premier echec
-- **Pipelines composables** : Travaillez avec des collections d'operations faillibles
+- **Sémantique fail-fast** : Arrêt au premier `Nothing` ou `Err`
+- **Résultats tout-ou-rien** : Soit tout réussit, soit vous obtenez le premier échec
+- **Pipelines composables** : Travaillez avec des collections d'opérations faillibles
 
-### Le probleme : Boucles et verifications imbriquees
+### Le problème : Boucles et vérifications imbriquées
 
 ```python
 def fetch_all_users(ids: list[int]) -> list[User]:
@@ -48,7 +48,7 @@ def fetch_all_users(ids: list[int]) -> Option[list[User]]:
     # Returns NOTHING if any fails
 ```
 
-Une seule ligne, une semantique claire, composable avec d'autres operations Option.
+Une seule ligne, une sémantique claire, composable avec d'autres opérations Option.
 
 ## API
 
@@ -68,25 +68,25 @@ Une seule ligne, une semantique claire, composable avec d'autres operations Opti
 
 ### Variantes Async
 
-| Fonction | Execution | Description |
+| Fonction | Exécution | Description |
 |----------|-----------|-------------|
-| `traverse_option_async(xs, f)` | Sequentielle | Applique et collecte async, un a la fois |
-| `traverse_result_async(xs, f)` | Sequentielle | Applique et collecte async, un a la fois |
-| `traverse_option_parallel(xs, f)` | Parallele | Applique et collecte async, tous en meme temps |
-| `traverse_result_parallel(xs, f)` | Parallele | Applique et collecte async, tous en meme temps |
+| `traverse_option_async(xs, f)` | Séquentielle | Applique et collecte async, un à la fois |
+| `traverse_result_async(xs, f)` | Séquentielle | Applique et collecte async, un à la fois |
+| `traverse_option_parallel(xs, f)` | Parallèle | Applique et collecte async, tous en même temps |
+| `traverse_result_parallel(xs, f)` | Parallèle | Applique et collecte async, tous en même temps |
 
 **Quand utiliser laquelle :**
 
-| Variante | A utiliser quand |
+| Variante | À utiliser quand |
 |---------|----------|
-| `*_async` (sequentielle) | APIs avec limitation de debit, operations dependantes, effets de bord ordonnes |
-| `*_parallel` | Operations independantes, debit maximal |
+| `*_async` (séquentielle) | APIs avec limitation de débit, opérations dépendantes, effets de bord ordonnés |
+| `*_parallel` | Opérations indépendantes, débit maximal |
 
 ## Fonctionnement
 
 ### Sequence
 
-Sequence itere sur la collection en accumulant les valeurs. Au premier echec, elle court-circuite :
+Sequence itère sur la collection en accumulant les valeurs. Au premier échec, elle court-circuite :
 
 ```python
 def sequence_option(xs):
@@ -101,7 +101,7 @@ def sequence_option(xs):
 
 ### Traverse
 
-Traverse est sequence compose avec map - applique la fonction, puis sequence :
+Traverse est sequence composé avec map - applique la fonction, puis séquence :
 
 ```python
 def traverse_option(xs, f):
@@ -115,19 +115,19 @@ def traverse_option(xs, f):
     return Some(out)
 ```
 
-Conceptuellement : `traverse(xs, f) = sequence(map(f, xs))`, mais implemente de maniere plus efficace.
+Conceptuellement : `traverse(xs, f) = sequence(map(f, xs))`, mais implémenté de manière plus efficace.
 
 ### Comportement Fail-Fast
 
-Toutes les operations sont **fail-fast** : elles arretent le traitement des qu'elles rencontrent un echec. Cela signifie :
+Toutes les opérations sont **fail-fast** : elles arrêtent le traitement dès qu'elles rencontrent un échec. Cela signifie :
 
-- Efficace : Pas de calcul gaspille apres un echec
-- Premiere erreur uniquement : Vous obtenez le premier `Err`, pas tous
+- Efficace : Pas de calcul gaspillé après un échec
+- Première erreur uniquement : Vous obtenez le premier `Err`, pas tous
 - Pour accumuler toutes les erreurs, utilisez [`validate_all`](validate.md)
 
 ## Exemples
 
-### Analyser une liste d'entrees
+### Analyser une liste d'entrées
 
 ```python
 from fptk.adt.traverse import traverse_option
@@ -149,7 +149,7 @@ result = traverse_option(inputs, parse_int)
 # NOTHING (stops at "oops")
 ```
 
-### Recuperer plusieurs ressources
+### Récupérer plusieurs ressources
 
 ```python
 from fptk.adt.traverse import traverse_result
@@ -188,7 +188,7 @@ result = sequence_result(validations)
 # Ok(["Alice", "alice@example.com", "secret"]) or Err("email is required")
 ```
 
-### Combiner avec les methodes Option
+### Combiner avec les méthodes Option
 
 ```python
 from fptk.adt.traverse import traverse_option
@@ -232,7 +232,7 @@ async def fetch_users_parallel(ids: list[int]) -> Result[list[User], str]:
 # - Parallel: ~100ms
 ```
 
-### Chainer les traversals
+### Chaîner les traversals
 
 ```python
 from fptk.adt.traverse import traverse_result
@@ -251,7 +251,7 @@ def process_batch(ids: list[int]) -> Result[list[ProcessedItem], str]:
     )
 ```
 
-### De Sequence a Traverse
+### De Sequence à Traverse
 
 ```python
 from fptk.adt.traverse import sequence_option, traverse_option
@@ -267,10 +267,10 @@ result = traverse_option(strings, parse_int)
 
 ## Traverse vs validate_all
 
-| Operation | Comportement | A utiliser quand |
+| Opération | Comportement | À utiliser quand |
 |-----------|----------|----------|
-| `traverse_result` | Fail-fast, retourne la premiere erreur | Vous n'avez besoin que d'une erreur |
-| `validate_all` | Accumule toutes les erreurs | Vous voulez afficher tous les problemes |
+| `traverse_result` | Fail-fast, retourne la première erreur | Vous n'avez besoin que d'une erreur |
+| `validate_all` | Accumule toutes les erreurs | Vous voulez afficher tous les problèmes |
 
 ```python
 # Fail-fast: stops at first error
@@ -286,26 +286,26 @@ validate_all([check_positive, check_even], -3)
 
 **Utilisez traverse quand :**
 
-- Vous avez une collection de valeurs a traiter de maniere uniforme
-- Chaque etape de traitement peut echouer
-- Vous voulez une semantique tout-ou-rien
-- Vous voulez la premiere erreur, pas toutes les erreurs
+- Vous avez une collection de valeurs à traiter de manière uniforme
+- Chaque étape de traitement peut échouer
+- Vous voulez une sémantique tout-ou-rien
+- Vous voulez la première erreur, pas toutes les erreurs
 
 **Utilisez validate_all quand :**
 
 - Vous voulez collecter toutes les erreurs
 - Vous validez une saisie utilisateur
-- Afficher tous les problemes en une fois ameliore l'experience utilisateur
+- Afficher tous les problèmes en une fois améliore l'expérience utilisateur
 
 **Utilisez `*_parallel` quand :**
 
-- Vous avez besoin d'une execution async parallele
-- Chaque tache est independante
-- Vous voulez un debit maximal
+- Vous avez besoin d'une exécution async parallèle
+- Chaque tâche est indépendante
+- Vous voulez un débit maximal
 
 ## Voir aussi
 
 - [`Option`](option.md) - Le type optionnel sous-jacent
-- [`Result`](result.md) - Le type resultat sous-jacent
+- [`Result`](result.md) - Le type résultat sous-jacent
 - [`validate_all`](validate.md) - Pour accumuler toutes les erreurs
-- [`gather_results`](async.md) - Pour les operations async paralleles
+- [`gather_results`](async.md) - Pour les opérations async parallèles

@@ -1,10 +1,10 @@
 # NonEmptyList
 
-`fptk.adt.nelist` fournit `NonEmptyList`, une liste qui est garantie d'avoir au moins un element par construction.
+`fptk.adt.nelist` fournit `NonEmptyList`, une liste qui est garantie d'avoir au moins un élément par construction.
 
 ## Concept : Collections non vides
 
-De nombreuses operations sur les listes echouent ou produisent des resultats sans signification lorsque la liste est vide :
+De nombreuses opérations sur les listes échouent ou produisent des résultats sans signification lorsque la liste est vide :
 
 ```python
 max([])    # ValueError: max() arg is an empty sequence
@@ -13,9 +13,9 @@ head = xs[0]  # IndexError if empty
 sum(xs) / len(xs)  # ZeroDivisionError if empty
 ```
 
-Une `NonEmptyList` fait de la non-vacuite une garantie au niveau du type. Si vous avez une `NonEmptyList`, vous savez qu'elle a au moins un element — aucune verification a l'execution n'est necessaire.
+Une `NonEmptyList` fait de la non-vacuité une garantie au niveau du type. Si vous avez une `NonEmptyList`, vous savez qu'elle a au moins un élément — aucune vérification à l'exécution n'est nécessaire.
 
-### Le probleme : Les verifications de liste vide
+### Le problème : Les vérifications de liste vide
 
 ```python
 def average(xs: list[float]) -> float:
@@ -57,7 +57,7 @@ else:
 
 | Type | Description |
 |------|-------------|
-| `NonEmptyList[E]` | Liste avec au moins un element |
+| `NonEmptyList[E]` | Liste avec au moins un élément |
 
 ### Constructeur
 
@@ -73,25 +73,25 @@ result = NonEmptyList.from_iter([1, 2])  # NonEmptyList or None
 result = NonEmptyList.from_iter([])      # None
 ```
 
-### Proprietes
+### Propriétés
 
-| Propriete | Type | Description |
+| Propriété | Type | Description |
 |-----------|------|-------------|
-| `head` | `E` | Premier element (garanti d'exister) |
-| `tail` | `tuple[E, ...]` | Elements restants (peut etre vide) |
+| `head` | `E` | Premier élément (garanti d'exister) |
+| `tail` | `tuple[E, ...]` | Éléments restants (peut être vide) |
 
-### Methodes
+### Méthodes
 
-| Methode | Signature | Description |
+| Méthode | Signature | Description |
 |---------|-----------|-------------|
-| `append(e)` | `(E) -> NonEmptyList[E]` | Ajoute un element a la fin |
+| `append(e)` | `(E) -> NonEmptyList[E]` | Ajoute un élément à la fin |
 | `to_list()` | `() -> list[E]` | Convertit en liste standard |
-| `from_iter(it)` | `staticmethod (Iterable[E]) -> NonEmptyList[E] | None` | Cree a partir d'un iterable |
-| `__iter__()` | `() -> Iterator[E]` | Itere sur tous les elements |
+| `from_iter(it)` | `staticmethod (Iterable[E]) -> NonEmptyList[E] | None` | Crée à partir d'un itérable |
+| `__iter__()` | `() -> Iterator[E]` | Itère sur tous les éléments |
 
 ## Fonctionnement
 
-### Structure de donnees
+### Structure de données
 
 NonEmptyList stocke un `head` requis et un `tail` optionnel :
 
@@ -102,9 +102,9 @@ class NonEmptyList[E]:
     tail: tuple[E, ...] = ()     # Remaining elements (tuple for immutability)
 ```
 
-Le champ `head` est requis, garantissant au moins un element. Le `tail` est un tuple (immuable) qui peut etre vide.
+Le champ `head` est requis, garantissant au moins un élément. Le `tail` est un tuple (immuable) qui peut être vide.
 
-### Construction sure
+### Construction sûre
 
 ```python
 @staticmethod
@@ -117,9 +117,9 @@ def from_iter(it: Iterable[E]) -> NonEmptyList[E] | None:
     return NonEmptyList(h, tuple(iterator))
 ```
 
-`from_iter` retourne `None` pour les iterables vides — la seule facon d'obtenir une `NonEmptyList` est avec au moins un element.
+`from_iter` retourne `None` pour les itérables vides — la seule façon d'obtenir une `NonEmptyList` est avec au moins un élément.
 
-### Iteration
+### Itération
 
 ```python
 def __iter__(self):
@@ -127,7 +127,7 @@ def __iter__(self):
     yield from self.tail
 ```
 
-Itere dans l'ordre : d'abord le head, puis les elements du tail.
+Itère dans l'ordre : d'abord le head, puis les éléments du tail.
 
 ### Ajout
 
@@ -136,11 +136,11 @@ def append(self, e: E) -> NonEmptyList[E]:
     return NonEmptyList(self.head, self.tail + (e,))
 ```
 
-Retourne une nouvelle `NonEmptyList` avec l'element ajoute a la fin (immuable).
+Retourne une nouvelle `NonEmptyList` avec l'élément ajouté à la fin (immuable).
 
 ## Exemples
 
-### Acces sur au head
+### Accès sûr au head
 
 ```python
 from fptk.adt.nelist import NonEmptyList
@@ -185,7 +185,7 @@ if data:
     result = stats(data)
 ```
 
-### Construction de resultats
+### Construction de résultats
 
 ```python
 from fptk.adt.nelist import NonEmptyList
@@ -220,7 +220,7 @@ result.match(
 )
 ```
 
-### Chainage d'operations
+### Chaînage d'opérations
 
 ```python
 from fptk.adt.nelist import NonEmptyList
@@ -253,30 +253,30 @@ regular_list = nel.to_list()  # [1, 2, 3]
 
 **Utilisez NonEmptyList lorsque :**
 
-- Votre domaine necessite au moins un element
-- Vous voulez eliminer les verifications de liste vide dans le code en aval
+- Votre domaine nécessite au moins un élément
+- Vous voulez éliminer les vérifications de liste vide dans le code en aval
 - Vous accumulez des erreurs (validation)
-- Vous calculez des agregats qui necessitent une entree non vide (moyenne, max, etc.)
+- Vous calculez des agrégats qui nécessitent une entrée non vide (moyenne, max, etc.)
 
 **N'utilisez pas NonEmptyList lorsque :**
 
 - Les collections vides sont valides dans votre domaine
-- Vous avez besoin d'acces aleatoire frequent (utilisez list)
-- Vous avez besoin d'ajouts efficaces (la concatenation de tuple est O(n))
+- Vous avez besoin d'accès aléatoire fréquent (utilisez list)
+- Vous avez besoin d'ajouts efficaces (la concaténation de tuple est O(n))
 
 ## NonEmptyList vs Option[list]
 
 | Type | Signification |
 |------|---------------|
-| `list[T]` | Zero ou plusieurs elements |
-| `Option[list[T]]` | Peut-etre une liste (mais la liste pourrait toujours etre vide !) |
-| `NonEmptyList[T]` | Un ou plusieurs elements (garanti) |
-| `Option[NonEmptyList[T]]` | Peut-etre une liste non vide |
+| `list[T]` | Zéro ou plusieurs éléments |
+| `Option[list[T]]` | Peut-être une liste (mais la liste pourrait toujours être vide !) |
+| `NonEmptyList[T]` | Un ou plusieurs éléments (garanti) |
+| `Option[NonEmptyList[T]]` | Peut-être une liste non vide |
 
-`NonEmptyList` est le bon choix lorsque vous devez garantir la non-vacuite au niveau du type.
+`NonEmptyList` est le bon choix lorsque vous devez garantir la non-vacuité au niveau du type.
 
 ## Voir aussi
 
 - [`validate_all`](validate.md) — Utilise NonEmptyList pour l'accumulation d'erreurs
-- [`Option`](option.md) — Pour les valeurs qui peuvent etre absentes
-- [`Result`](result.md) — Pour les calculs qui peuvent echouer
+- [`Option`](option.md) — Pour les valeurs qui peuvent être absentes
+- [`Result`](result.md) — Pour les calculs qui peuvent échouer

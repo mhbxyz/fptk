@@ -1,20 +1,20 @@
 # Reader
 
-`fptk.adt.reader` fournit la monade `Reader` pour l'injection de dependances. Elle vous permet d'ecrire des fonctions qui dependent d'un environnement (configuration, services, contexte) sans passer explicitement cet environnement a chaque appel de fonction.
+`fptk.adt.reader` fournit la monade `Reader` pour l'injection de dépendances. Elle vous permet d'écrire des fonctions qui dépendent d'un environnement (configuration, services, contexte) sans passer explicitement cet environnement à chaque appel de fonction.
 
 ## Concept : La monade Reader
 
-La monade Reader represente des calculs qui dependent d'un environnement partage en lecture seule. Au lieu de passer la configuration ou les dependances a travers chaque parametre de fonction, Reader les propage automatiquement.
+La monade Reader représente des calculs qui dépendent d'un environnement partagé en lecture seule. Au lieu de passer la configuration ou les dépendances à travers chaque paramètre de fonction, Reader les propage automatiquement.
 
-Considerez-la comme : **une fonction en attente de son environnement**.
+Considérez-la comme : **une fonction en attente de son environnement**.
 
 ```python
 Reader[R, A]  ≈  R -> A
 ```
 
-Un `Reader[Config, User]` est un calcul qui, etant donne une `Config`, produit un `User`.
+Un `Reader[Config, User]` est un calcul qui, étant donné une `Config`, produit un `User`.
 
-### Le probleme : La propagation des dependances
+### Le problème : La propagation des dépendances
 
 ```python
 def get_user(db: Database, cache: Cache, id: int) -> User:
@@ -77,7 +77,7 @@ env = Env(db=real_db, cache=real_cache)
 dashboard = get_dashboard(42).run(env)
 ```
 
-Les dependances sont injectees une seule fois au niveau superieur. Les fonctions se composent sans passer `env`.
+Les dépendances sont injectées une seule fois au niveau supérieur. Les fonctions se composent sans passer `env`.
 
 ## API
 
@@ -85,7 +85,7 @@ Les dependances sont injectees une seule fois au niveau superieur. Les fonctions
 
 | Type | Description |
 |------|-------------|
-| `Reader[R, A]` | Calcul necessitant l'environnement `R` pour produire `A` |
+| `Reader[R, A]` | Calcul nécessitant l'environnement `R` pour produire `A` |
 
 ### Constructeur
 
@@ -96,24 +96,24 @@ from fptk.adt.reader import Reader
 reader = Reader(lambda env: env.config["timeout"])
 ```
 
-### Methodes
+### Méthodes
 
-| Methode | Signature | Description |
+| Méthode | Signature | Description |
 |---------|-----------|-------------|
-| `map(f)` | `(A -> B) -> Reader[R, B]` | Transforme le resultat |
-| `bind(f)` | `(A -> Reader[R, B]) -> Reader[R, B]` | Chaine des fonctions retournant un Reader |
-| `run(env)` | `(R) -> A` | Execute avec l'environnement |
+| `map(f)` | `(A -> B) -> Reader[R, B]` | Transforme le résultat |
+| `bind(f)` | `(A -> Reader[R, B]) -> Reader[R, B]` | Chaîne des fonctions retournant un Reader |
+| `run(env)` | `(R) -> A` | Exécute avec l'environnement |
 
 ### Fonctions
 
 | Fonction | Signature | Description |
 |----------|-----------|-------------|
 | `ask()` | `() -> Reader[R, R]` | Obtient l'environnement complet |
-| `local(f, reader)` | `(R -> R, Reader[R, A]) -> Reader[R, A]` | Execute avec un environnement modifie |
+| `local(f, reader)` | `(R -> R, Reader[R, A]) -> Reader[R, A]` | Exécute avec un environnement modifié |
 
 ## Fonctionnement
 
-### Structure de donnees
+### Structure de données
 
 Reader encapsule une fonction de l'environnement vers une valeur :
 
@@ -128,7 +128,7 @@ class Reader[R, A]:
 
 ### Le Functor : `map`
 
-`map` transforme le resultat tout en conservant la dependance a l'environnement :
+`map` transforme le résultat tout en conservant la dépendance à l'environnement :
 
 ```python
 def map(self, f):
@@ -137,25 +137,25 @@ def map(self, f):
 
 ### La Monade : `bind`
 
-`bind` chaine des calculs qui dependent tous les deux de l'environnement :
+`bind` chaîne des calculs qui dépendent tous les deux de l'environnement :
 
 ```python
 def bind(self, f):
     return Reader(lambda env: f(self.run_reader(env)).run_reader(env))
 ```
 
-Point cle : le meme `env` est passe au Reader original et au Reader retourne par `f`.
+Point clé : le même `env` est passé au Reader original et au Reader retourné par `f`.
 
-### `ask` : Acceder a l'environnement
+### `ask` : Accéder à l'environnement
 
-`ask()` cree un Reader qui retourne simplement l'environnement :
+`ask()` crée un Reader qui retourne simplement l'environnement :
 
 ```python
 def ask():
     return Reader(lambda env: env)
 ```
 
-Utilisez-le lorsque vous devez acceder a l'environnement au milieu d'une chaine :
+Utilisez-le lorsque vous devez accéder à l'environnement au milieu d'une chaîne :
 
 ```python
 ask().map(lambda env: env.config["database_url"])
@@ -163,14 +163,14 @@ ask().map(lambda env: env.config["database_url"])
 
 ### `local` : Modifier l'environnement temporairement
 
-`local` execute un Reader avec un environnement transforme :
+`local` exécute un Reader avec un environnement transformé :
 
 ```python
 def local(f, reader):
     return Reader(lambda env: reader.run_reader(f(env)))
 ```
 
-Utile pour les tests ou les surcharges localisees :
+Utile pour les tests ou les surcharges localisées :
 
 ```python
 # Run with increased timeout
@@ -179,7 +179,7 @@ local(lambda env: env._replace(timeout=30), my_reader)
 
 ## Exemples
 
-### Acces a la configuration
+### Accès à la configuration
 
 ```python
 from fptk.adt.reader import Reader, ask
@@ -213,7 +213,7 @@ conn = connection_string().run(config)
 # "postgres://localhost?timeout=30"
 ```
 
-### Dependances de services
+### Dépendances de services
 
 ```python
 @dataclass
@@ -241,7 +241,7 @@ def get_user_with_posts(id: int) -> Reader[Services, Option[UserWithPosts]]:
     )
 ```
 
-### Tests avec un environnement simule
+### Tests avec un environnement simulé
 
 ```python
 # Production
@@ -261,7 +261,7 @@ test_services = Services(
 result = create_user(data).run(test_services)
 ```
 
-### Utiliser `local` pour des changements localises
+### Utiliser `local` pour des changements localisés
 
 ```python
 def with_debug(reader: Reader[Config, A]) -> Reader[Config, A]:
@@ -307,31 +307,31 @@ def fetch_user_posts(user_id: int) -> Reader[Services, Result[list[Post], str]]:
 
 **Utilisez Reader lorsque :**
 
-- Vous avez des dependances dont de nombreuses fonctions ont besoin
-- Vous voulez du code testable avec des dependances injectables
-- Vous construisez un framework ou une bibliotheque avec un comportement configurable
-- Vous voulez separer "quoi faire" de "avec quoi le faire"
+- Vous avez des dépendances dont de nombreuses fonctions ont besoin
+- Vous voulez du code testable avec des dépendances injectables
+- Vous construisez un framework ou une bibliothèque avec un comportement configurable
+- Vous voulez séparer "quoi faire" de "avec quoi le faire"
 
 **N'utilisez pas Reader lorsque :**
 
-- Vous n'avez qu'une ou deux fonctions qui ont besoin de la dependance
-- La dependance est vraiment globale et ne change jamais
+- Vous n'avez qu'une ou deux fonctions qui ont besoin de la dépendance
+- La dépendance est vraiment globale et ne change jamais
 - Les performances sont critiques (Reader ajoute une surcharge d'appel de fonction)
 
 ## Reader vs autres patterns
 
 | Pattern | Quand l'utiliser |
 |---------|------------------|
-| Reader | Injection de dependances pure, pipelines composables |
-| Variables globales | Jamais (en general) |
-| Parametres explicites | Peu de fonctions, dependances simples |
-| Classe avec self | Conception orientee objet |
-| Framework d'injection de dependances | Applications volumineuses avec des cycles de vie complexes |
+| Reader | Injection de dépendances pure, pipelines composables |
+| Variables globales | Jamais (en général) |
+| Paramètres explicites | Peu de fonctions, dépendances simples |
+| Classe avec self | Conception orientée objet |
+| Framework d'injection de dépendances | Applications volumineuses avec des cycles de vie complexes |
 
-Reader est particulierement utile lorsque vous voulez les avantages de l'injection de dependances tout en gardant votre code purement fonctionnel et composable.
+Reader est particulièrement utile lorsque vous voulez les avantages de l'injection de dépendances tout en gardant votre code purement fonctionnel et composable.
 
 ## Voir aussi
 
-- [`State`](state.md) — Lorsque vous devez a la fois lire et ecrire l'etat
+- [`State`](state.md) — Lorsque vous devez à la fois lire et écrire l'état
 - [`Result`](result.md) — Combiner avec Reader pour des calculs faillibles
-- [Effets de bord](../guide/side-effects.md) — Coeurs purs avec effets aux frontieres
+- [Effets de bord](../guide/side-effects.md) — Coeurs purs avec effets aux frontières

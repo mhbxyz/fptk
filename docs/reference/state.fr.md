@@ -1,20 +1,20 @@
 # State
 
-`fptk.adt.state` fournit la monade `State` pour des calculs a etat purs. Elle vous permet d'ecrire du code qui lit et modifie l'etat sans reellement muter quoi que ce soit.
+`fptk.adt.state` fournit la monade `State` pour des calculs à état purs. Elle vous permet d'écrire du code qui lit et modifie l'état sans réellement muter quoi que ce soit.
 
 ## Concept : La monade State
 
-La monade State represente des calculs qui propagent un etat mutable a travers une sequence d'operations, mais de maniere pure — sans mutation reelle. Chaque operation recoit l'etat courant et retourne une valeur plus le nouvel etat.
+La monade State représente des calculs qui propagent un état mutable à travers une séquence d'opérations, mais de manière pure — sans mutation réelle. Chaque opération reçoit l'état courant et retourne une valeur plus le nouvel état.
 
-Considerez-la comme : **une fonction qui transforme l'etat tout en produisant une valeur**.
+Considérez-la comme : **une fonction qui transforme l'état tout en produisant une valeur**.
 
 ```python
 State[S, A]  ≈  S -> (A, S)
 ```
 
-Un `State[Counter, int]` est un calcul qui, etant donne un etat `Counter`, produit une valeur `int` et un nouvel etat `Counter`.
+Un `State[Counter, int]` est un calcul qui, étant donné un état `Counter`, produit une valeur `int` et un nouvel état `Counter`.
 
-### Le probleme : L'etat mutable
+### Le problème : L'état mutable
 
 ```python
 class Parser:
@@ -70,7 +70,7 @@ result, final_state = consume(3).run(initial)
 
 | Type | Description |
 |------|-------------|
-| `State[S, A]` | Calcul avec etat `S` produisant une valeur `A` |
+| `State[S, A]` | Calcul avec état `S` produisant une valeur `A` |
 
 ### Constructeur
 
@@ -81,28 +81,28 @@ from fptk.adt.state import State
 state = State(lambda s: (s * 2, s + 1))
 ```
 
-### Methodes
+### Méthodes
 
-| Methode | Signature | Description |
+| Méthode | Signature | Description |
 |---------|-----------|-------------|
-| `map(f)` | `(A -> B) -> State[S, B]` | Transforme le resultat |
-| `bind(f)` | `(A -> State[S, B]) -> State[S, B]` | Chaine des fonctions retournant un State |
-| `run(initial)` | `(S) -> (A, S)` | Execute avec l'etat initial |
+| `map(f)` | `(A -> B) -> State[S, B]` | Transforme le résultat |
+| `bind(f)` | `(A -> State[S, B]) -> State[S, B]` | Chaîne des fonctions retournant un State |
+| `run(initial)` | `(S) -> (A, S)` | Exécute avec l'état initial |
 
 ### Fonctions
 
 | Fonction | Signature | Description |
 |----------|-----------|-------------|
-| `get()` | `() -> State[S, S]` | Obtient l'etat courant |
-| `put(s)` | `(S) -> State[S, None]` | Remplace l'etat |
-| `modify(f)` | `(S -> S) -> State[S, None]` | Applique une fonction a l'etat |
-| `gets(f)` | `(S -> A) -> State[S, A]` | Obtient et transforme l'etat |
+| `get()` | `() -> State[S, S]` | Obtient l'état courant |
+| `put(s)` | `(S) -> State[S, None]` | Remplace l'état |
+| `modify(f)` | `(S -> S) -> State[S, None]` | Applique une fonction à l'état |
+| `gets(f)` | `(S -> A) -> State[S, A]` | Obtient et transforme l'état |
 
 ## Fonctionnement
 
-### Structure de donnees
+### Structure de données
 
-State encapsule une fonction de l'etat vers (valeur, nouvel_etat) :
+State encapsule une fonction de l'état vers (valeur, nouvel_état) :
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -115,7 +115,7 @@ class State[S, A]:
 
 ### Le Functor : `map`
 
-`map` transforme la valeur tout en preservant la transition d'etat :
+`map` transforme la valeur tout en préservant la transition d'état :
 
 ```python
 def map(self, f):
@@ -127,7 +127,7 @@ def map(self, f):
 
 ### La Monade : `bind`
 
-`bind` sequence les calculs a etat, propageant l'etat a travers :
+`bind` séquence les calculs à état, propageant l'état à travers :
 
 ```python
 def bind(self, f):
@@ -137,9 +137,9 @@ def bind(self, f):
     return State(run)
 ```
 
-Point cle : le second calcul recoit l'etat *apres* l'execution du premier calcul.
+Point clé : le second calcul reçoit l'état *après* l'exécution du premier calcul.
 
-### Primitives d'etat
+### Primitives d'état
 
 ```python
 def get():
@@ -188,7 +188,7 @@ value, final_state = program.run(0)
 # value = 3, final_state = 3
 ```
 
-### Operations sur une pile
+### Opérations sur une pile
 
 ```python
 from fptk.adt.state import State, get, put
@@ -228,7 +228,7 @@ result, final_stack = program.run(())
 # result = (Some(3), Some(2)), final_stack = (1,)
 ```
 
-### Generation de nombres aleatoires
+### Génération de nombres aléatoires
 
 ```python
 from fptk.adt.state import State, get, put
@@ -302,7 +302,7 @@ result, final = parse_string("hello").run(ParseState("hello world", 0))
 # result = Ok("hello"), final.pos = 5
 ```
 
-### Etat de jeu
+### État de jeu
 
 ```python
 @dataclass(frozen=True)
@@ -357,30 +357,30 @@ def combat_round() -> State[GameState, str]:
 
 **Utilisez State lorsque :**
 
-- Vous devez propager l'etat a travers un calcul de maniere pure
-- Vous voulez des transformations d'etat testables
-- Vous construisez des parseurs, des interpreteurs ou de la logique de jeu
-- Vous devez revenir en arriere ou brancher avec des etats differents
+- Vous devez propager l'état à travers un calcul de manière pure
+- Vous voulez des transformations d'état testables
+- Vous construisez des parseurs, des interpréteurs ou de la logique de jeu
+- Vous devez revenir en arrière ou brancher avec des états différents
 
 **N'utilisez pas State lorsque :**
 
-- Des cas simples ou des parametres explicites fonctionnent bien
+- Des cas simples où des paramètres explicites fonctionnent bien
 - Les performances sont critiques (State ajoute une surcharge d'appel de fonction)
-- L'etat est vraiment global et n'a jamais besoin de retour en arriere
+- L'état est vraiment global et n'a jamais besoin de retour en arrière
 
 ## State vs autres patterns
 
 | Pattern | Quand l'utiliser |
 |---------|------------------|
-| Monade State | Propagation d'etat pure, composable, testable |
+| Monade State | Propagation d'état pure, composable, testable |
 | Objets mutables | Cas critiques en performance, cas simples |
 | Reader | Environnement en lecture seule |
 | Writer | Journal en ajout seul |
 
-State est particulierement utile pour les simulations, les parseurs, et tout algorithme ou vous devez suivre l'etat intermediaire tout en maintenant la transparence referentielle.
+State est particulièrement utile pour les simulations, les parseurs, et tout algorithme où vous devez suivre l'état intermédiaire tout en maintenant la transparence référentielle.
 
 ## Voir aussi
 
-- [`Reader`](reader.md) — Acces a l'environnement en lecture seule
+- [`Reader`](reader.md) — Accès à l'environnement en lecture seule
 - [`Writer`](writer.md) — Journalisation en ajout seul
-- [`Result`](result.md) — Combiner avec State pour des calculs a etat faillibles
+- [`Result`](result.md) — Combiner avec State pour des calculs à état faillibles

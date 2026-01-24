@@ -1,10 +1,10 @@
-# Iterateurs Lazy
+# Itérateurs Lazy
 
-`fptk.iter.lazy` fournit des utilitaires d'iterateurs lazy pour un traitement des donnees efficace en memoire.
+`fptk.iter.lazy` fournit des utilitaires d'itérateurs lazy pour un traitement des données efficace en mémoire.
 
-## Concept : Evaluation lazy
+## Concept : Évaluation lazy
 
-L'evaluation lazy retarde le calcul jusqu'a ce que le resultat soit reellement necessaire. Avec les iterateurs lazy, vous pouvez construire des pipelines de transformation qui traitent les donnees un element a la fois, sans charger des collections entieres en memoire.
+L'évaluation lazy retarde le calcul jusqu'à ce que le résultat soit réellement nécessaire. Avec les itérateurs lazy, vous pouvez construire des pipelines de transformation qui traitent les données un élément à la fois, sans charger des collections entières en mémoire.
 
 ```python
 # Eager: loads all 1M items, creates intermediate lists
@@ -23,11 +23,11 @@ result = list(islice(pipeline, 10))  # Only computes what's needed
 
 Cela est important car :
 
-- **Efficacite memoire** : Traitez des jeux de donnees plus grands que la RAM
-- **Arret anticipe** : Arretez le traitement quand vous avez assez de resultats
-- **Pipelines composables** : Chainez les transformations sans allocations intermediaires
+- **Efficacité mémoire** : Traitez des jeux de données plus grands que la RAM
+- **Arrêt anticipé** : Arrêtez le traitement quand vous avez assez de résultats
+- **Pipelines composables** : Chaînez les transformations sans allocations intermédiaires
 
-### Le probleme : Evaluation eager
+### Le problème : Évaluation eager
 
 ```python
 # Each step creates a full list in memory
@@ -65,14 +65,14 @@ for domain in pipeline:
 |----------|-----------|-------------|
 | `map_iter(f, xs)` | `(A -> B, Iterable[A]) -> Iterator[B]` | Map lazy |
 | `filter_iter(pred, xs)` | `(A -> bool, Iterable[A]) -> Iterator[A]` | Filter lazy |
-| `chunk(xs, n)` | `(Iterable[T], int) -> Iterator[tuple[T, ...]]` | Decoupe en morceaux |
-| `group_by_key(xs, key)` | `(Iterable[T], T -> K) -> Iterator[tuple[K, list[T]]]` | Groupe les elements consecutifs |
+| `chunk(xs, n)` | `(Iterable[T], int) -> Iterator[tuple[T, ...]]` | Découpe en morceaux |
+| `group_by_key(xs, key)` | `(Iterable[T], T -> K) -> Iterator[tuple[K, list[T]]]` | Groupe les éléments consécutifs |
 
 ## Fonctionnement
 
 ### `map_iter`
 
-Applique paresseusement une fonction a chaque element :
+Applique paresseusement une fonction à chaque élément :
 
 ```python
 def map_iter(f, xs):
@@ -80,11 +80,11 @@ def map_iter(f, xs):
         yield f(x)
 ```
 
-Utilise un generateur - aucune liste n'est creee. Les valeurs sont calculees une a la fois lors de l'iteration.
+Utilise un générateur - aucune liste n'est créée. Les valeurs sont calculées une à la fois lors de l'itération.
 
 ### `filter_iter`
 
-Filtre paresseusement les elements selon un predicat :
+Filtre paresseusement les éléments selon un prédicat :
 
 ```python
 def filter_iter(pred, xs):
@@ -93,11 +93,11 @@ def filter_iter(pred, xs):
             yield x
 ```
 
-Ne produit que les elements qui passent le predicat.
+Ne produit que les éléments qui passent le prédicat.
 
 ### `chunk`
 
-Decoupe un iterable en morceaux de taille fixe :
+Découpe un itérable en morceaux de taille fixe :
 
 ```python
 def chunk(xs, size):
@@ -109,11 +109,11 @@ def chunk(xs, size):
         yield buf
 ```
 
-Le dernier morceau peut etre plus petit. Utile pour le traitement par lots.
+Le dernier morceau peut être plus petit. Utile pour le traitement par lots.
 
 ### `group_by_key`
 
-Groupe les elements consecutifs selon une fonction cle :
+Groupe les éléments consécutifs selon une fonction clé :
 
 ```python
 def group_by_key(xs, key):
@@ -121,7 +121,7 @@ def group_by_key(xs, key):
         yield k, list(grp)
 ```
 
-**Important** : L'entree doit etre pre-triee selon la cle pour des resultats corrects.
+**Important** : L'entrée doit être pré-triée selon la clé pour des résultats corrects.
 
 ## Exemples
 
@@ -164,7 +164,7 @@ def process_large_csv(path: str):
             yield process_row(row)
 ```
 
-### Insertions en base de donnees par lots
+### Insertions en base de données par lots
 
 ```python
 from fptk.iter.lazy import chunk
@@ -176,7 +176,7 @@ def batch_insert(records, batch_size=1000):
         print(f"Inserted {len(batch)} records")
 ```
 
-### Appels API pagines
+### Appels API paginés
 
 ```python
 from fptk.iter.lazy import chunk
@@ -188,7 +188,7 @@ def fetch_with_pagination(ids: list[int], page_size=100):
         yield from response["items"]
 ```
 
-### Groupement d'entrees de logs
+### Groupement d'entrées de logs
 
 ```python
 from fptk.iter.lazy import group_by_key
@@ -253,7 +253,7 @@ def etl_pipeline(source_path: str, dest_db):
             dest_db.insert_many(batch)
 ```
 
-### Combiner plusieurs iterateurs
+### Combiner plusieurs itérateurs
 
 ```python
 from fptk.iter.lazy import map_iter, filter_iter
@@ -271,7 +271,7 @@ all_records = chain(source1, source2, source3)
 processed = map_iter(normalize, filter_iter(is_valid, all_records))
 ```
 
-### Agregation efficace en memoire
+### Agrégation efficace en mémoire
 
 ```python
 from fptk.iter.lazy import map_iter
@@ -293,29 +293,29 @@ avg = streaming_average(map_iter(float, huge_file))
 
 | Aspect | Lazy (Iterator) | Eager (List) |
 |--------|-----------------|--------------|
-| Memoire | O(1) par element | O(n) tout a la fois |
-| Temps de demarrage | Instantane | Doit tout traiter d'abord |
-| Passages multiples | Doit recreer | Peut iterer a nouveau |
-| Acces aleatoire | Non | Oui |
-| Debogage | Plus difficile (consomme) | Plus facile (peut inspecter) |
+| Mémoire | O(1) par élément | O(n) tout à la fois |
+| Temps de démarrage | Instantané | Doit tout traiter d'abord |
+| Passages multiples | Doit recréer | Peut itérer à nouveau |
+| Accès aléatoire | Non | Oui |
+| Débogage | Plus difficile (consomme) | Plus facile (peut inspecter) |
 
-## Quand utiliser les iterateurs lazy
+## Quand utiliser les itérateurs lazy
 
-**Utilisez les iterateurs lazy quand :**
+**Utilisez les itérateurs lazy quand :**
 
-- Vous traitez de grands jeux de donnees qui ne tiennent pas en memoire
-- Vous n'avez peut-etre pas besoin de tous les resultats (arret anticipe)
+- Vous traitez de grands jeux de données qui ne tiennent pas en mémoire
+- Vous n'avez peut-être pas besoin de tous les résultats (arrêt anticipé)
 - Vous construisez des pipelines de transformations
 - Vous lisez depuis des fichiers ou des flux
-- L'efficacite memoire est importante
+- L'efficacité mémoire est importante
 
 **Utilisez les listes eager quand :**
 
-- Vous avez besoin d'un acces aleatoire
-- Vous devez iterer plusieurs fois
-- Le jeu de donnees est petit
-- Vous devez connaitre la longueur a l'avance
-- Le debogage est une priorite
+- Vous avez besoin d'un accès aléatoire
+- Vous devez itérer plusieurs fois
+- Le jeu de données est petit
+- Vous devez connaître la longueur à l'avance
+- Le débogage est une priorité
 
 ## Alternatives Python natives
 
@@ -328,10 +328,10 @@ Les fonctions lazy de fptk encapsulent les builtins Python avec un typage explic
 | `chunk(xs, n)` | `itertools.batched(xs, n)` (3.12+) |
 | `group_by_key(xs, k)` | `itertools.groupby(xs, k)` |
 
-Les versions fptk fournissent de meilleurs indices de type et un style d'API coherent.
+Les versions fptk fournissent de meilleurs indices de type et un style d'API cohérent.
 
 ## Voir aussi
 
-- [Recette traitement de donnees](../recipes/data-processing.md) - Traitement lazy dans les pipelines ETL
+- [Recette traitement de données](../recipes/data-processing.md) - Traitement lazy dans les pipelines ETL
 - [`traverse`](traverse.md) - Pour travailler avec des collections de Option/Result
 - [`async_tools`](async.md) - Pour le traitement par lots async
