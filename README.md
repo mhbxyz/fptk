@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/fptk-logo.svg" alt="fptk" width="400">
+  <img src="https://raw.githubusercontent.com/mhbxyz/fptk/main/docs/assets/fptk-logo.svg" alt="fptk" width="400">
 </p>
 
 <p align="center">
