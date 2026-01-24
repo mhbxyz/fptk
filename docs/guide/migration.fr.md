@@ -1,12 +1,12 @@
 # Guide de migration
 
-Ce guide montre comment adopter progressivement les patrons fptk dans votre code Python existant. Chaque niveau s'appuie sur le précédent, vous pouvez donc commencer petit et ajouter des fonctionnalités selon vos besoins.
+Ce guide détaille comment intégrer progressivement les patrons de fptk à votre code Python existant. Chaque étape s'appuie sur la précédente, vous permettant de commencer modestement et d'ajouter des fonctionnalités au fur et à mesure.
 
 ## Niveau 1 : Composition de fonctions
 
-**Commencez ici** — Remplacez les appels de fonctions imbriqués par `pipe()`.
+**Point de départ** — Remplacez les appels de fonctions imbriqués par `pipe()`.
 
-### Avant : Appels imbriqués
+### Avant : Des appels imbriqués
 
 ```python
 def process_data(data):
@@ -20,7 +20,7 @@ def process_data(data):
     return None
 ```
 
-### Après : Pipeline linéaire
+### Après : Un pipeline linéaire
 
 ```python
 from fptk.core.func import pipe
@@ -37,15 +37,15 @@ def process_data(data):
 
 **Avantages :**
 
-- Plus facile à lire (de haut en bas)
-- Plus facile d'ajouter/supprimer des étapes
-- Plus facile de tester les fonctions individuellement
+-   ✅ Lecture plus intuitive (de haut en bas)
+-   ✅ Ajout/suppression d'étapes simplifiée
+-   ✅ Test unitaire de chaque fonction facilité
 
 ## Niveau 2 : Gestion des erreurs avec Result
 
-**Ajoutez une gestion d'erreurs appropriée** — Remplacez les exceptions et les vérifications de None par `Result`.
+**Intégrez une gestion des erreurs robuste** — Remplacez les exceptions et les vérifications de `None` par `Result`.
 
-### Avant : Gestion des exceptions
+### Avant : Une gestion d'exceptions classique
 
 ```python
 def create_user(email, password):
@@ -61,7 +61,7 @@ def create_user(email, password):
         return None
 ```
 
-### Après : Flux basé sur Result
+### Après : Un flux basé sur Result
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -76,7 +76,7 @@ def create_user(email, password):
     )
 
 def validate_email_result(email):
-    return Ok(email) if "@" in email else Err("Invalid email")
+    return Ok(email) if "@" in email else Err("Email invalide")
 
 def hash_password_safe(password):
     return try_catch(lambda: bcrypt.hashpw(password.encode(), bcrypt.gensalt()))()
@@ -87,15 +87,15 @@ def save_to_db_safe(email, hashed):
 
 **Avantages :**
 
-- Types d'erreurs explicites
-- Gestion des erreurs composable
-- Pas de propagation d'exceptions
+-   ✅ Types d'erreurs explicites
+-   ✅ Gestion des erreurs composable
+-   ✅ Fin de la propagation d'exceptions
 
 ## Niveau 3 : Valeurs optionnelles avec Option
 
-**Gérez les données manquantes en toute sécurité** — Remplacez les vérifications de None par `Option`.
+**Gérez les données manquantes en toute sécurité** — Remplacez les vérifications de `None` par `Option`.
 
-### Avant : Vérifications de None partout
+### Avant : Des vérifications de None omniprésentes
 
 ```python
 def get_display_name(user):
@@ -108,7 +108,7 @@ def get_display_name(user):
     return user.get('username', 'Anonymous')
 ```
 
-### Après : Chaînage avec Option
+### Après : Un chaînage avec Option
 
 ```python
 from fptk.adt.option import from_nullable
@@ -123,34 +123,34 @@ def get_display_name(user):
             .or_else(lambda: from_nullable(profile.get('display_name')))
         )
         .or_else(lambda: from_nullable(user.get('username')))
-        .unwrap_or('Anonymous')
+        .unwrap_or('Anonyme')
     )
 ```
 
 **Avantages :**
 
-- Pas de bugs liés à None
-- Gestion explicite de l'absence
-- Opérations composables
+-   ✅ Élimination des bugs liés à `None`
+-   ✅ Gestion explicite de l'absence de valeur
+-   ✅ Opérations composables
 
 ## Niveau 4 : Accumulation de validation
 
-**Collectez toutes les erreurs d'un coup** — Remplacez la validation fail-fast par l'accumulation d'erreurs.
+**Collectez toutes les erreurs en une fois** — Remplacez la validation qui s'arrête à la première erreur (fail-fast) par l'accumulation de toutes les erreurs.
 
-### Avant : Validation fail-fast
+### Avant : Une validation qui s'arrête à la première erreur
 
 ```python
 def validate_user(user):
     if not user.get('email'):
-        return False, "Email required"
+        return False, "Email requis"
     if '@' not in user['email']:
-        return False, "Invalid email"
+        return False, "Email invalide"
     if len(user.get('password', '')) < 8:
-        return False, "Password too short"
+        return False, "Mot de passe trop court"
     return True, None
 ```
 
-### Après : Accumuler les erreurs
+### Après : L'accumulation des erreurs
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -158,23 +158,23 @@ from fptk.validate import validate_all
 
 def validate_user(user):
     return validate_all([
-        lambda u: Ok(u) if u.get('email') else Err("Email required"),
-        lambda u: Ok(u) if '@' in u.get('email', '') else Err("Invalid email"),
-        lambda u: Ok(u) if len(u.get('password', '')) >= 8 else Err("Password too short"),
+        lambda u: Ok(u) if u.get('email') else Err("Email requis"),
+        lambda u: Ok(u) if '@' in u.get('email', '') else Err("Email invalide"),
+        lambda u: Ok(u) if len(u.get('password', '')) >= 8 else Err("Mot de passe trop court"),
     ], user)
 ```
 
 **Avantages :**
 
-- Toutes les erreurs affichées en une fois
-- Meilleure expérience utilisateur
-- API de validation cohérente
+-   ✅ Toutes les erreurs affichées simultanément
+-   ✅ Meilleure expérience utilisateur
+-   ✅ API de validation cohérente
 
-## Niveau 5 : Collections paresseuses
+<h2>Niveau 5 : Collections paresseuses</h2>
 
-**Traitez les grands ensembles de données efficacement** — Remplacez les listes par des itérateurs paresseux.
+**Traitez efficacement les grands ensembles de données** — Remplacez les listes par des itérateurs paresseux (lazy iterators).
 
-### Avant : Tout charger en mémoire
+### Avant : Un chargement complet en mémoire
 
 ```python
 def process_logs(logs):
@@ -187,7 +187,7 @@ def process_logs(logs):
     return errors
 ```
 
-### Après : Traitement paresseux
+### Après : Un traitement paresseux
 
 ```python
 from fptk.iter.lazy import map_iter, filter_iter
@@ -202,15 +202,15 @@ def process_logs(logs):
 
 **Avantages :**
 
-- Efficace en mémoire pour les grands ensembles de données
-- Étapes de traitement composables
-- Ne traite que ce dont vous avez besoin
+-   ✅ Efficace en mémoire pour les grands jeux de données
+-   ✅ Étapes de traitement composables
+-   ✅ Traitement uniquement des données nécessaires
 
-## Niveau 6 : Opérations asynchrones
+<h2>Niveau 6 : Opérations asynchrones</h2>
 
-**Gérez la concurrence en toute sécurité** — Utilisez `gather_results` pour les opérations asynchrones.
+**Gérez la concurrence en toute sécurité** — Utilisez `gather_results` pour vos opérations asynchrones.
 
-### Avant : Coordination asynchrone manuelle
+### Avant : Une coordination asynchrone manuelle
 
 ```python
 async def fetch_user_data(user_ids):
@@ -225,7 +225,7 @@ async def fetch_user_data(user_ids):
     return data
 ```
 
-### Après : Concurrence basée sur Result
+### Après : Une concurrence basée sur Result
 
 ```python
 from fptk.async_tools import gather_results
@@ -237,62 +237,62 @@ async def fetch_user_data(user_ids):
 
 **Avantages :**
 
-- Gestion structurée des erreurs
-- Code asynchrone propre
-- Types d'erreurs cohérents
+-   ✅ Gestion des erreurs structurée
+-   ✅ Code asynchrone épuré
+-   ✅ Types d'erreurs cohérents
 
-## Patrons de migration courants
+<h2>Patrons de migration courants</h2>
 
-### Conversion du code basé sur les exceptions
+<h3>Conversion du code gérant les exceptions</h3>
 
 ```python
-# Before
+# Avant
 def risky_operation(x):
     if x < 0:
         raise ValueError("Negative value")
     return x * 2
 
-# After
+# Après
 def risky_operation(x):
-    return Ok(x * 2) if x >= 0 else Err("Negative value")
+    return Ok(x * 2) if x >= 0 else Err("Valeur négative")
 ```
 
-### Conversion des fonctions retournant None
+<h3>Conversion des fonctions retournant None</h3>
 
 ```python
-# Before
+# Avant
 def find_user(user_id):
     return users_db.get(user_id)
 
-# After
+# Après
 from fptk.adt.option import from_nullable
 
 def find_user(user_id):
     return from_nullable(users_db.get(user_id))
 ```
 
-### Conversion des fonctions de validation
+<h3>Conversion des fonctions de validation</h3>
 
 ```python
-# Before
+# Avant
 def is_valid_email(email):
     return '@' in email
 
-# After
+# Après
 def validate_email(email):
-    return Ok(email) if '@' in email else Err("Invalid email")
+    return Ok(email) if '@' in email else Err("Email invalide")
 ```
 
-## Stratégie de migration
+<h2>Stratégie de migration</h2>
 
-1. **Commencez petit** : Commencez avec `pipe()` dans une seule fonction
-2. **Ajoutez la gestion d'erreurs** : Convertissez progressivement les fonctions basées sur les exceptions vers `Result`
-3. **Gérez les optionnels** : Remplacez les vérifications de None par `Option`
-4. **Montez en puissance** : Ajoutez la validation, l'asynchrone et les patrons avancés selon vos besoins
+1.  **Commencez modestement** : Intégrez `pipe()` à une seule fonction.
+2.  **Ajoutez la gestion des erreurs** : Convertissez progressivement les fonctions basées sur les exceptions en utilisant `Result`.
+3.  **Gérez les valeurs optionnelles** : Remplacez les vérifications de `None` par `Option`.
+4.  **Passez à la vitesse supérieure** : Intégrez la validation, les opérations asynchrones et les patrons avancés selon vos besoins.
 
-**Rappelez-vous :**
+**Points clés à retenir :**
 
-- Vous n'avez pas besoin de tout convertir d'un coup
-- Chaque niveau améliore votre code
-- L'adoption partielle est précieuse
-- Commencez par les points douloureux de votre base de code
+-   Pas besoin de tout convertir en une seule fois.
+-   Chaque niveau apporte une amélioration concrète à votre code.
+-   Une adoption partielle est déjà bénéfique.
+-   Concentrez-vous d'abord sur les points sensibles de votre codebase.

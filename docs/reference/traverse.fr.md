@@ -1,311 +1,151 @@
 # Traverse
 
-`fptk.adt.traverse` fournit des opérations pour travailler avec des collections de valeurs `Option` ou `Result`, en les "retournant" tout en gérant les échecs.
+Le module `fptk.adt.traverse` propose des opérations pour manipuler des collections de valeurs `Option` ou `Result`, permettant de « retourner » la structure du conteneur tout en assurant une gestion des erreurs robuste.
 
 ## Concept : Traverse et Sequence
 
-Lorsque vous avez une liste de calculs susceptibles d'échouer, vous souhaitez souvent :
+Face à une liste de calculs susceptibles d'échouer, deux besoins majeurs apparaissent :
 
-1. **Sequence** : Transformer `list[Option[T]]` en `Option[list[T]]`
-2. **Traverse** : Appliquer une fonction sur une liste, puis séquencer les résultats
+1.  **Sequence** : transformer une `list[Option[T]]` en `Option[list[T]]`.
+2.  **Traverse** : appliquer une fonction à une liste d'éléments simples, puis regrouper les résultats faillibles en un seul conteneur.
 
-Ces opérations "inversent" la structure des conteneurs :
+Ces opérations inversent littéralement l'imbrication des conteneurs :
 
 ```
-list[Option[T]]  →  Option[list[T]]
+list[Option[T]]    →  Option[list[T]]
 list[Result[T, E]]  →  Result[list[T], E]
 ```
 
-Cela est important car :
+C'est une approche indispensable pour :
 
-- **Sémantique fail-fast** : Arrêt au premier `Nothing` ou `Err`
-- **Résultats tout-ou-rien** : Soit tout réussit, soit vous obtenez le premier échec
-- **Pipelines composables** : Travaillez avec des collections d'opérations faillibles
+-   **Une sémantique d'arrêt immédiat (fail-fast)** : stopper le traitement au premier `Nothing` ou `Err` rencontré.
+-   **Des résultats « tout ou rien »** : soit vous obtenez la liste complète des succès, soit vous recevez le signal du premier échec.
+-   **Des pipelines fluides** : manipulez des collections d'opérations faillibles comme s'il s'agissait d'une opération unique.
 
-### Le problème : Boucles et vérifications imbriquées
+### Le problème : l'accumulation manuelle laborieuse
 
 ```python
-def fetch_all_users(ids: list[int]) -> list[User]:
-    results = []
+def recuperer_tous_utilisateurs(ids: list[int]) -> list[User]:
+    resultats = []
     for id in ids:
-        user = fetch_user(id)  # Returns Option[User]
-        if user.is_none():
-            return []  # What if one fails?
-        results.append(user.unwrap())
-    return results
+        utilisateur = fetch_user(id)  # Renvoie Option[User]
+        if utilisateur.is_none():
+            return []  # Que faire si un seul échoue ? Tout abandonner ?
+        resultats.append(utilisateur.unwrap())
+    return resultats
 
-# Messy, error-prone, hard to read
+# Ce code est verbeux, propice aux erreurs et peu lisible.
 ```
 
-### La solution Traverse
+### La solution avec `Traverse`
 
 ```python
 from fptk.adt.traverse import traverse_option
 
-def fetch_all_users(ids: list[int]) -> Option[list[User]]:
+def recuperer_tous_utilisateurs(ids: list[int]) -> Option[list[User]]:
     return traverse_option(ids, fetch_user)
-    # Returns Some([users...]) if all succeed
-    # Returns NOTHING if any fails
+    # Renvoie Some([users...]) si TOUS ont réussi.
+    # Renvoie NOTHING si au moins UN a échoué.
 ```
 
-Une seule ligne, une sémantique claire, composable avec d'autres opérations Option.
+Le code devient concis, sa sémantique est explicite et il s'intègre parfaitement au reste de l'écosystème fptk.
 
 ## API
 
 ### Fonctions Sequence
 
 | Fonction | Signature | Description |
-|----------|-----------|-------------|
-| `sequence_option(xs)` | `Iterable[Option[A]] -> Option[list[A]]` | Collecte les valeurs Some |
-| `sequence_result(xs)` | `Iterable[Result[A, E]] -> Result[list[A], E]` | Collecte les valeurs Ok |
+| :--- | :--- | :--- |
+| `sequence_option(xs)` | `Iterable[Option[A]] -> Option[list[A]]` | Collecte les valeurs `Some` si elles sont toutes présentes. |
+| `sequence_result(xs)` | `Iterable[Result[A, E]] -> Result[list[A], E]` | Collecte les valeurs `Ok` si elles ont toutes réussi. |
 
 ### Fonctions Traverse
 
 | Fonction | Signature | Description |
-|----------|-----------|-------------|
-| `traverse_option(xs, f)` | `(Iterable[A], A -> Option[B]) -> Option[list[B]]` | Applique et collecte |
-| `traverse_result(xs, f)` | `(Iterable[A], A -> Result[B, E]) -> Result[list[B], E]` | Applique et collecte |
+| :--- | :--- | :--- |
+| `traverse_option(xs, f)` | `(Iterable[A], A -> Option[B]) -> Option[list[B]]` | Applique `f` et collecte les succès. |
+| `traverse_result(xs, f)` | `(Iterable[A], A -> Result[B, E]) -> Result[list[B], E]` | Applique `f` et collecte les succès. |
 
-### Variantes Async
+### Variantes asynchrones (Async)
 
-| Fonction | Exécution | Description |
-|----------|-----------|-------------|
-| `traverse_option_async(xs, f)` | Séquentielle | Applique et collecte async, un à la fois |
-| `traverse_result_async(xs, f)` | Séquentielle | Applique et collecte async, un à la fois |
-| `traverse_option_parallel(xs, f)` | Parallèle | Applique et collecte async, tous en même temps |
-| `traverse_result_parallel(xs, f)` | Parallèle | Applique et collecte async, tous en même temps |
+| Fonction | Mode d'exécution | Description |
+| :--- | :--- | :--- |
+| `traverse_*_async` | Séquentiel | Applique et collecte un par un. |
+| `traverse_*_parallel` | Parallèle | Applique et collecte tout de front. |
 
-**Quand utiliser laquelle :**
+**Quand choisir quelle variante ?**
 
-| Variante | À utiliser quand |
-|---------|----------|
-| `*_async` (séquentielle) | APIs avec limitation de débit, opérations dépendantes, effets de bord ordonnés |
-| `*_parallel` | Opérations indépendantes, débit maximal |
+-   **Séquentiel (`*_async`)** : idéal pour les API avec limitation de débit (rate limiting) ou les opérations interdépendantes.
+-   **Parallèle (`*_parallel`)** : à privilégier pour les tâches indépendantes afin d'obtenir un débit maximal.
 
-## Fonctionnement
-
-### Sequence
-
-Sequence itère sur la collection en accumulant les valeurs. Au premier échec, elle court-circuite :
-
-```python
-def sequence_option(xs):
-    out = []
-    for x in xs:
-        if isinstance(x, Some):
-            out.append(x.value)
-        else:
-            return NOTHING  # Short-circuit
-    return Some(out)
-```
-
-### Traverse
-
-Traverse est sequence composé avec map - applique la fonction, puis séquence :
-
-```python
-def traverse_option(xs, f):
-    out = []
-    for x in xs:
-        result = f(x)
-        if isinstance(result, Some):
-            out.append(result.value)
-        else:
-            return NOTHING  # Short-circuit
-    return Some(out)
-```
-
-Conceptuellement : `traverse(xs, f) = sequence(map(f, xs))`, mais implémenté de manière plus efficace.
+## Fonctionnement technique
 
 ### Comportement Fail-Fast
 
-Toutes les opérations sont **fail-fast** : elles arrêtent le traitement dès qu'elles rencontrent un échec. Cela signifie :
+Toutes ces opérations adoptent une stratégie d'**arrêt immédiat (fail-fast)**. Dès qu'un échec survient :
 
-- Efficace : Pas de calcul gaspillé après un échec
-- Première erreur uniquement : Vous obtenez le premier `Err`, pas tous
-- Pour accumuler toutes les erreurs, utilisez [`validate_all`](validate.md)
+-   Le traitement s'interrompt (économie de ressources).
+-   Seule la première erreur rencontrée est renvoyée.
+-   Pour collecter *toutes* les erreurs, utilisez plutôt [`validate_all`](validate.md).
 
-## Exemples
+## Exemples d'utilisation
 
-### Analyser une liste d'entrées
+### Analyse d'une liste de saisies
 
 ```python
 from fptk.adt.traverse import traverse_option
 from fptk.adt.option import Some, NOTHING
 
-def parse_int(s: str) -> Option[int]:
+def analyser_entier(s: str) -> Option[int]:
     try:
         return Some(int(s))
     except ValueError:
         return NOTHING
 
-# Parse all or none
-inputs = ["1", "2", "3"]
-result = traverse_option(inputs, parse_int)
+# Analyse tout... ou rien
+resultat = traverse_option(["1", "2", "3"], analyser_entier)
 # Some([1, 2, 3])
 
-inputs = ["1", "oops", "3"]
-result = traverse_option(inputs, parse_int)
-# NOTHING (stops at "oops")
+resultat = traverse_option(["1", "erreur", "3"], analyser_entier)
+# NOTHING (le traitement s'est arrêté à "erreur")
 ```
 
-### Récupérer plusieurs ressources
+### Parcours asynchrone
 
 ```python
-from fptk.adt.traverse import traverse_result
-from fptk.adt.result import Ok, Err
-
-def fetch_user(id: int) -> Result[User, str]:
-    user = db.get(id)
-    if user:
-        return Ok(user)
-    return Err(f"User {id} not found")
-
-# Fetch all users
-ids = [1, 2, 3]
-result = traverse_result(ids, fetch_user)
-# Ok([User(1), User(2), User(3)]) or Err("User X not found")
-```
-
-### Valider une configuration
-
-```python
-from fptk.adt.traverse import sequence_result
-
-def validate_field(name: str, value: str) -> Result[str, str]:
-    if not value:
-        return Err(f"{name} is required")
-    return Ok(value)
-
-# Validate multiple fields
-validations = [
-    validate_field("name", config.get("name", "")),
-    validate_field("email", config.get("email", "")),
-    validate_field("password", config.get("password", "")),
-]
-
-result = sequence_result(validations)
-# Ok(["Alice", "alice@example.com", "secret"]) or Err("email is required")
-```
-
-### Combiner avec les méthodes Option
-
-```python
-from fptk.adt.traverse import traverse_option
-from fptk.adt.option import from_nullable
-
-def get_user_names(data: list[dict]) -> Option[list[str]]:
-    return traverse_option(
-        data,
-        lambda d: from_nullable(d.get("name"))
-    )
-
-users = [{"name": "Alice"}, {"name": "Bob"}]
-get_user_names(users)  # Some(["Alice", "Bob"])
-
-users = [{"name": "Alice"}, {"age": 30}]
-get_user_names(users)  # NOTHING (second has no name)
-```
-
-### Traversal async
-
-```python
-from fptk.adt.traverse import traverse_result_async, traverse_result_parallel
-
-async def fetch_user_async(id: int) -> Result[User, str]:
-    try:
-        user = await db.async_get(id)
-        return Ok(user) if user else Err(f"User {id} not found")
-    except Exception as e:
-        return Err(str(e))
-
-# Sequential - respects rate limits, executes one at a time
-async def fetch_users_sequential(ids: list[int]) -> Result[list[User], str]:
-    return await traverse_result_async(ids, fetch_user_async)
-
-# Parallel - maximum throughput, all requests at once
-async def fetch_users_parallel(ids: list[int]) -> Result[list[User], str]:
+async def recuperer_users_parallele(ids: list[int]) -> Result[list[User], str]:
+    # Déclenche toutes les requêtes simultanément
     return await traverse_result_parallel(ids, fetch_user_async)
 
-# 100 users, 100ms each:
-# - Sequential: ~10 seconds
-# - Parallel: ~100ms
+async def recuperer_users_sequentiel(ids: list[int]) -> Result[list[User], str]:
+    # Interroge la base un par un (plus prudent pour les gros volumes)
+    return await traverse_result_async(ids, fetch_user_async)
 ```
 
-### Chaîner les traversals
+## Traverse vs validate_all : le match
 
-```python
-from fptk.adt.traverse import traverse_result
-from fptk.core.func import pipe
+| Opération | Stratégie | Usage recommandé |
+| :--- | :--- | :--- |
+| **`traverse_result`** | Arrêt immédiat (fail-fast). | Logique interne, pipelines techniques. |
+| **`validate_all`** | Accumulation complète. | Saisie utilisateur, formulaires web. |
 
-def process_batch(ids: list[int]) -> Result[list[ProcessedItem], str]:
-    return pipe(
-        ids,
-        lambda xs: traverse_result(xs, fetch_item),       # Fetch all
-        lambda r: r.bind(lambda items:
-            traverse_result(items, validate_item)          # Validate all
-        ),
-        lambda r: r.bind(lambda items:
-            traverse_result(items, transform_item)         # Transform all
-        ),
-    )
-```
+## Quand utiliser Traverse ?
 
-### De Sequence à Traverse
+**Privilégiez Traverse lorsque :**
 
-```python
-from fptk.adt.traverse import sequence_option, traverse_option
+-   Vous traitez une collection de données de façon uniforme.
+-   Chaque étape du traitement est susceptible d'échouer.
+-   Vous exigez que la totalité de la collection soit valide pour continuer.
+-   Seule la première erreur survenue vous intéresse.
 
-# These are equivalent:
-# 1. Manual map + sequence
-options = [parse_int(s) for s in strings]  # list[Option[int]]
-result = sequence_option(options)           # Option[list[int]]
+**Privilégiez `*_parallel` lorsque :**
 
-# 2. Traverse (more efficient, no intermediate list)
-result = traverse_option(strings, parse_int)
-```
-
-## Traverse vs validate_all
-
-| Opération | Comportement | À utiliser quand |
-|-----------|----------|----------|
-| `traverse_result` | Fail-fast, retourne la première erreur | Vous n'avez besoin que d'une erreur |
-| `validate_all` | Accumule toutes les erreurs | Vous voulez afficher tous les problèmes |
-
-```python
-# Fail-fast: stops at first error
-traverse_result(["bad1", "bad2"], parse_positive)
-# Err("'bad1' is not positive")
-
-# Accumulate: collects all errors
-validate_all([check_positive, check_even], -3)
-# Err(NonEmptyList("not positive", "not even"))
-```
-
-## Quand utiliser Traverse
-
-**Utilisez traverse quand :**
-
-- Vous avez une collection de valeurs à traiter de manière uniforme
-- Chaque étape de traitement peut échouer
-- Vous voulez une sémantique tout-ou-rien
-- Vous voulez la première erreur, pas toutes les erreurs
-
-**Utilisez validate_all quand :**
-
-- Vous voulez collecter toutes les erreurs
-- Vous validez une saisie utilisateur
-- Afficher tous les problèmes en une fois améliore l'expérience utilisateur
-
-**Utilisez `*_parallel` quand :**
-
-- Vous avez besoin d'une exécution async parallèle
-- Chaque tâche est indépendante
-- Vous voulez un débit maximal
+-   Les tâches sont totalement indépendantes les unes des autres.
+-   Vous visez la meilleure performance brute possible.
 
 ## Voir aussi
 
-- [`Option`](option.md) - Le type optionnel sous-jacent
-- [`Result`](result.md) - Le type résultat sous-jacent
-- [`validate_all`](validate.md) - Pour accumuler toutes les erreurs
-- [`gather_results`](async.md) - Pour les opérations async parallèles
+-   [`Option`](option.md) — Le type de base pour les valeurs facultatives.
+-   [`Result`](result.md) — Le type de base pour les calculs faillibles.
+-   [`validate_all`](validate.md) — Pour accumuler l'ensemble des erreurs de validation.
+-   [`gather_results`](async.md) — Pour orchestrer des opérations asynchrones parallèles.

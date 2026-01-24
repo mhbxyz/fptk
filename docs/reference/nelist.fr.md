@@ -1,54 +1,54 @@
-# NonEmptyList
+# Liste non vide (NonEmptyList)
 
-`fptk.adt.nelist` fournit `NonEmptyList`, une liste qui est garantie d'avoir au moins un élément par construction.
+Le module `fptk.adt.nelist` définit le type `NonEmptyList`, une structure de liste garantissant, par construction, la présence d'au moins un élément.
 
-## Concept : Collections non vides
+## Concept : Des collections jamais vides
 
-De nombreuses opérations sur les listes échouent ou produisent des résultats sans signification lorsque la liste est vide :
+De nombreuses opérations sur les listes classiques échouent ou produisent des résultats incohérents lorsqu'elles sont appliquées à une séquence vide :
 
 ```python
 max([])    # ValueError: max() arg is an empty sequence
 min([])    # ValueError
-head = xs[0]  # IndexError if empty
-sum(xs) / len(xs)  # ZeroDivisionError if empty
+premier = xs[0]  # IndexError si la liste est vide
+moyenne = sum(xs) / len(xs)  # ZeroDivisionError si la liste est vide
 ```
 
-Une `NonEmptyList` fait de la non-vacuité une garantie au niveau du type. Si vous avez une `NonEmptyList`, vous savez qu'elle a au moins un élément — aucune vérification à l'exécution n'est nécessaire.
+`NonEmptyList` transforme cette exigence de « non-vacuité » en une garantie au niveau du type. Posséder une `NonEmptyList` vous assure qu'elle contient au moins un élément, éliminant ainsi le besoin de vérifications manuelles lors de l'exécution.
 
-### Le problème : Les vérifications de liste vide
+### Le problème : les tests de vacuité répétitifs
 
 ```python
-def average(xs: list[float]) -> float:
+def calculer_moyenne(xs: list[float]) -> float:
     if not xs:
-        raise ValueError("Cannot compute average of empty list")
+        raise ValueError("Impossible de calculer la moyenne d'une liste vide")
     return sum(xs) / len(xs)
 
-def first(xs: list[T]) -> T:
+def obtenir_premier(xs: list[T]) -> T:
     if not xs:
-        raise ValueError("List is empty")
+        raise ValueError("La liste est vide")
     return xs[0]
 
-# Every function needs to validate, every caller needs to handle
+# Chaque fonction doit valider la donnée, et chaque appelant doit gérer l'exception potentielle.
 ```
 
-### La solution NonEmptyList
+### La solution : `NonEmptyList`
 
 ```python
 from fptk.adt.nelist import NonEmptyList
 
-def average(xs: NonEmptyList[float]) -> float:
-    # No check needed—xs is guaranteed non-empty
+def calculer_moyenne(xs: NonEmptyList[float]) -> float:
+    # Aucun test requis : xs contient forcément au moins un élément.
     return sum(xs) / len(list(xs))
 
-def first(xs: NonEmptyList[T]) -> T:
-    return xs.head  # Always safe
+def obtenir_premier(xs: NonEmptyList[T]) -> T:
+    return xs.head  # Toujours sûr
 
-# Construct safely
-result = NonEmptyList.from_iter(data)  # Option[NonEmptyList]
-if result:
-    avg = average(result)
+# Construction sécurisée aux frontières du code
+resultat = NonEmptyList.from_iter(donnees)  # Renvoie Option[NonEmptyList]
+if resultat:
+    moyenne = calculer_moyenne(resultat)
 else:
-    # Handle empty case once, at the boundary
+    # On gère le cas vide une seule fois, ici même.
 ```
 
 ## API
@@ -56,55 +56,55 @@ else:
 ### Types
 
 | Type | Description |
-|------|-------------|
-| `NonEmptyList[E]` | Liste avec au moins un élément |
+| :--- | :--- |
+| `NonEmptyList[E]` | Liste comportant obligatoirement au moins un élément. |
 
-### Constructeur
+### Constructeurs
 
 ```python
 from fptk.adt.nelist import NonEmptyList
 
-# Direct construction (always non-empty)
+# Construction directe (toujours non vide)
 nel = NonEmptyList(1)                    # [1]
 nel = NonEmptyList(1, (2, 3, 4))         # [1, 2, 3, 4]
 
-# From iterable (might be empty)
-result = NonEmptyList.from_iter([1, 2])  # NonEmptyList or None
-result = NonEmptyList.from_iter([])      # None
+# À partir d'un itérable (peut être vide)
+resultat = NonEmptyList.from_iter([1, 2])  # Renvoie une NonEmptyList ou None
+resultat = NonEmptyList.from_iter([])      # Renvoie None
 ```
 
 ### Propriétés
 
 | Propriété | Type | Description |
-|-----------|------|-------------|
-| `head` | `E` | Premier élément (garanti d'exister) |
-| `tail` | `tuple[E, ...]` | Éléments restants (peut être vide) |
+| :--- | :--- | :--- |
+| `head` | `E` | Le premier élément (dont l'existence est garantie). |
+| `tail` | `tuple[E, ...]` | Les éléments restants (peut être un tuple vide). |
 
 ### Méthodes
 
 | Méthode | Signature | Description |
-|---------|-----------|-------------|
-| `append(e)` | `(E) -> NonEmptyList[E]` | Ajoute un élément à la fin |
-| `to_list()` | `() -> list[E]` | Convertit en liste standard |
-| `from_iter(it)` | `staticmethod (Iterable[E]) -> NonEmptyList[E] | None` | Crée à partir d'un itérable |
-| `__iter__()` | `() -> Iterator[E]` | Itère sur tous les éléments |
+| :--- | :--- | :--- |
+| `append(e)` | `(E) -> NonEmptyList[E]` | Ajoute un élément à la fin. |
+| `to_list()` | `() -> list[E]` | Convertit en une liste standard de Python. |
+| `from_iter(it)` | `staticmethod (Iterable[E]) -> NonEmptyList[E] | None` | Tente de créer une `NonEmptyList` depuis un itérable. |
+| `__iter__()` | `() -> Iterator[E]` | Permet de parcourir l'ensemble des éléments. |
 
-## Fonctionnement
+## Fonctionnement technique
 
 ### Structure de données
 
-NonEmptyList stocke un `head` requis et un `tail` optionnel :
+`NonEmptyList` s'appuie sur un `head` obligatoire et un `tail` facultatif :
 
 ```python
 @dataclass(frozen=True, slots=True)
 class NonEmptyList[E]:
-    head: E                      # First element (required)
-    tail: tuple[E, ...] = ()     # Remaining elements (tuple for immutability)
+    head: E                      # Premier élément (requis)
+    tail: tuple[E, ...] = ()     # Éléments suivants (tuple pour garantir l'immuabilité)
 ```
 
-Le champ `head` est requis, garantissant au moins un élément. Le `tail` est un tuple (immuable) qui peut être vide.
+L'immuabilité est assurée par le décorateur `@dataclass(frozen=True)`.
 
-### Construction sûre
+### Construction sécurisée
 
 ```python
 @staticmethod
@@ -113,170 +113,97 @@ def from_iter(it: Iterable[E]) -> NonEmptyList[E] | None:
     try:
         h = next(iterator)
     except StopIteration:
-        return None  # Empty iterable
+        return None  # L'itérable était vide
     return NonEmptyList(h, tuple(iterator))
 ```
 
-`from_iter` retourne `None` pour les itérables vides — la seule façon d'obtenir une `NonEmptyList` est avec au moins un élément.
+La méthode `from_iter` renvoie `None` si l'itérable fourni est vide. C'est le seul moyen d'obtenir une instance de `NonEmptyList` à partir de données dynamiques.
 
-### Itération
+## Exemples d'utilisation
 
-```python
-def __iter__(self):
-    yield self.head
-    yield from self.tail
-```
-
-Itère dans l'ordre : d'abord le head, puis les éléments du tail.
-
-### Ajout
-
-```python
-def append(self, e: E) -> NonEmptyList[E]:
-    return NonEmptyList(self.head, self.tail + (e,))
-```
-
-Retourne une nouvelle `NonEmptyList` avec l'élément ajouté à la fin (immuable).
-
-## Exemples
-
-### Accès sûr au head
+### Accès sécurisé au premier élément
 
 ```python
 from fptk.adt.nelist import NonEmptyList
 
-# Regular list: might fail
-def unsafe_head(xs: list[int]) -> int:
-    return xs[0]  # IndexError if empty!
+# Avec une liste classique : risque d'erreur
+def premier_element_dangereux(xs: list[int]) -> int:
+    return xs[0]  # IndexError si vide !
 
-# NonEmptyList: always safe
-def safe_head(xs: NonEmptyList[int]) -> int:
-    return xs.head  # Guaranteed to exist
+# Avec NonEmptyList : sécurité totale
+def premier_element_sur(xs: NonEmptyList[int]) -> int:
+    return xs.head  # Garanti d'exister
 
-# Construct at boundaries
-data = get_data()  # list[int]
-nel = NonEmptyList.from_iter(data)
+# Validation aux limites
+donnees_brutes = recuperer_donnees()  # list[int]
+nel = NonEmptyList.from_iter(donnees_brutes)
 if nel:
-    print(safe_head(nel))
+    print(premier_element_sur(nel))
 else:
-    print("No data available")
+    print("Aucune donnée disponible")
 ```
 
-### Calcul de statistiques
+### Calcul de statistiques sans crainte
 
 ```python
 from fptk.adt.nelist import NonEmptyList
 
-def stats(xs: NonEmptyList[float]) -> dict:
-    """Compute statistics. No empty-list checks needed."""
-    values = list(xs)
+def statistiques(xs: NonEmptyList[float]) -> dict:
+    """Calcule des statistiques sans avoir à vérifier la vacuité de la liste."""
+    valeurs = list(xs)
     return {
-        "count": len(values),
-        "sum": sum(values),
-        "mean": sum(values) / len(values),
-        "min": min(values),  # Safe
-        "max": max(values),  # Safe
-        "first": xs.head,    # Safe
+        "nombre": len(valeurs),
+        "somme": sum(valeurs),
+        "moyenne": sum(valeurs) / len(valeurs), # Sûr (pas de division par zéro possible)
+        "min": min(valeurs),  # Sûr
+        "max": max(valeurs),  # Sûr
+        "premier": xs.head,   # Sûr
     }
-
-# Safe construction
-data = NonEmptyList.from_iter(measurements)
-if data:
-    result = stats(data)
 ```
 
-### Construction de résultats
-
-```python
-from fptk.adt.nelist import NonEmptyList
-
-def collect_errors(validations: list[Result]) -> NonEmptyList[str] | None:
-    """Collect error messages, if any."""
-    errors = [r.error for r in validations if r.is_err()]
-    return NonEmptyList.from_iter(errors)
-
-# Later
-errors = collect_errors(results)
-if errors:
-    # We know there's at least one error
-    print(f"First error: {errors.head}")
-    print(f"Total errors: {len(list(errors))}")
-```
-
-### Avec la validation
+### Usage avec `validate_all`
 
 ```python
 from fptk.validate import validate_all
 from fptk.adt.nelist import NonEmptyList
 
-# validate_all returns Result[T, NonEmptyList[E]]
-# If validation fails, you're guaranteed at least one error
+# validate_all renvoie Result[T, NonEmptyList[E]]
+# En cas d'échec, vous avez la garantie d'obtenir au moins une erreur.
 
-result = validate_all([check1, check2, check3], data)
-result.match(
-    ok=lambda d: process(d),
-    err=lambda errors: print(f"Validation failed: {errors.head}")
-    # errors is NonEmptyList[str], so .head is safe
+resultat = validate_all([test1, test2, test3], donnees)
+resultat.match(
+    ok=lambda d: traiter(d),
+    err=lambda erreurs: print(f"Validation échouée : {erreurs.head}")
+    # erreurs est une NonEmptyList[str], donc .head est parfaitement sûr.
 )
 ```
 
-### Chaînage d'opérations
+## Quand utiliser `NonEmptyList` ?
 
-```python
-from fptk.adt.nelist import NonEmptyList
+**Privilégiez `NonEmptyList` lorsque :**
 
-# Build up a list
-nel = NonEmptyList(1)
-nel = nel.append(2).append(3).append(4)
+-   Votre logique métier exige impérativement la présence d'au moins un élément.
+-   Vous voulez supprimer les tests de vacuité redondants dans vos fonctions.
+-   Vous accumulez des erreurs (comme dans un processus de validation).
+-   Vous effectuez des agrégations nécessitant une entrée non vide (moyenne, extremums, etc.).
 
-print(nel.head)       # 1
-print(nel.tail)       # (2, 3, 4)
-print(list(nel))      # [1, 2, 3, 4]
-```
+**Évitez `NonEmptyList` lorsque :**
 
-### Conversion de collections
-
-```python
-from fptk.adt.nelist import NonEmptyList
-
-# From various iterables
-from_list = NonEmptyList.from_iter([1, 2, 3])
-from_set = NonEmptyList.from_iter({1, 2, 3})
-from_gen = NonEmptyList.from_iter(x for x in range(5))
-
-# To list
-nel = NonEmptyList(1, (2, 3))
-regular_list = nel.to_list()  # [1, 2, 3]
-```
-
-## Quand utiliser NonEmptyList
-
-**Utilisez NonEmptyList lorsque :**
-
-- Votre domaine nécessite au moins un élément
-- Vous voulez éliminer les vérifications de liste vide dans le code en aval
-- Vous accumulez des erreurs (validation)
-- Vous calculez des agrégats qui nécessitent une entrée non vide (moyenne, max, etc.)
-
-**N'utilisez pas NonEmptyList lorsque :**
-
-- Les collections vides sont valides dans votre domaine
-- Vous avez besoin d'accès aléatoire fréquent (utilisez list)
-- Vous avez besoin d'ajouts efficaces (la concaténation de tuple est O(n))
+-   Une collection vide est une donnée tout à fait valide dans votre contexte.
+-   Vous avez besoin d'accès aléatoires très fréquents (préférez `list`).
+-   Vous effectuez de nombreux ajouts d'éléments (la concaténation de tuples est en O(n)).
 
 ## NonEmptyList vs Option[list]
 
 | Type | Signification |
-|------|---------------|
-| `list[T]` | Zéro ou plusieurs éléments |
-| `Option[list[T]]` | Peut-être une liste (mais la liste pourrait toujours être vide !) |
-| `NonEmptyList[T]` | Un ou plusieurs éléments (garanti) |
-| `Option[NonEmptyList[T]]` | Peut-être une liste non vide |
-
-`NonEmptyList` est le bon choix lorsque vous devez garantir la non-vacuité au niveau du type.
+| :--- | :--- |
+| `list[T]` | Zéro, un ou plusieurs éléments. |
+| `Option[list[T]]` | Une liste facultative (qui pourrait tout de même être vide). |
+| `NonEmptyList[T]` | Un ou plusieurs éléments (garanti). |
+| `Option[NonEmptyList[T]]` | Une liste facultative qui, si elle existe, contient forcément au moins un élément. |
 
 ## Voir aussi
 
-- [`validate_all`](validate.md) — Utilise NonEmptyList pour l'accumulation d'erreurs
-- [`Option`](option.md) — Pour les valeurs qui peuvent être absentes
-- [`Result`](result.md) — Pour les calculs qui peuvent échouer
+-   [`validate_all`](validate.md) — Utilise `NonEmptyList` pour collecter les erreurs.
+-   [`Option`](option.md) — Pour les valeurs potentiellement absentes.
+-   [`Result`](result.md) — Pour les calculs susceptibles d'échouer.

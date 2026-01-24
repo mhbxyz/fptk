@@ -1,58 +1,58 @@
 # Validation
 
-`fptk.validate` fournit une validation applicative - exécutant plusieurs vérifications et accumulant toutes les erreurs au lieu d'échouer rapidement.
+Le module `fptk.validate` propose une approche de validation dite « applicative » : elle permet d'exécuter plusieurs vérifications successives et d'accumuler l'ensemble des erreurs rencontrées, au lieu de s'interrompre dès le premier échec.
 
-## Concept : Validation applicative
+## Concept : La validation applicative
 
-La composition monadique standard (utilisant `bind`) est **fail-fast** : la première erreur arrête la chaîne. Mais pour la validation, vous souhaitez souvent **accumuler toutes les erreurs** pour montrer à l'utilisateur tout ce qui ne va pas en une seule fois.
+Contrairement à la composition monadique classique (via `bind`) qui s'arrête à la première erreur (stratégie **fail-fast**), la validation applicative vise à **collecter l'intégralité des anomalies**. C'est une méthode particulièrement adaptée aux interfaces utilisateurs, car elle permet de signaler tout ce qui ne va pas en une seule fois.
 
 ```
-Monadique (fail-fast) :     check1 → Err → stop
-Applicatif (accumule) : check1 → Err, check2 → Err, check3 → Ok → Err([e1, e2])
+Monadique (fail-fast)  : test1 → Échec → Fin du traitement.
+Applicatif (accumulation) : test1 → Échec, test2 → Échec, test3 → Succès → Erreur([e1, e2]).
 ```
 
-Cela est important car :
+Cette approche est capitale pour :
 
-- **Meilleure UX** : Afficher toutes les erreurs de validation en une fois, pas une à la fois
-- **Retour complet** : Les utilisateurs peuvent tout corriger en une seule passe
-- **Séparation des responsabilités** : La logique de validation reste indépendante et composable
+-   **Une meilleure expérience utilisateur (UX)** : affichez toutes les erreurs de validation simultanément.
+-   **Un retour complet** : permettez aux utilisateurs de corriger l'ensemble des problèmes en un seul passage.
+-   **Une séparation nette** : chaque règle de validation demeure indépendante, testable et réutilisable.
 
-### Le problème : Validation fail-fast
+### Le problème : la validation « fail-fast » frustrante
 
 ```python
-def validate_user(data: dict) -> Result[User, str]:
+def valider_utilisateur(data: dict) -> Result[User, str]:
     return (
-        check_name(data)
-        .bind(lambda _: check_email(data))
-        .bind(lambda _: check_age(data))
+        verifier_nom(data)
+        .bind(lambda _: verifier_email(data))
+        .bind(lambda _: verifier_age(data))
         .map(lambda _: User(**data))
     )
 
-# If name is invalid, we never see email/age errors
-result = validate_user({"name": "", "email": "bad", "age": -5})
-# Err("Name is required") — but email and age are also wrong!
+# Si le nom est invalide, l'utilisateur ne verra jamais les erreurs sur l'email ou l'âge.
+resultat = valider_utilisateur({"nom": "", "email": "erroné", "age": -5})
+# Err("Le nom est obligatoire") — mais l'email et l'âge sont aussi incorrects !
 ```
 
-### La solution applicative
+### La solution : `validate_all`
 
 ```python
 from fptk.validate import validate_all
 
-def validate_user(data: dict) -> Result[User, NonEmptyList[str]]:
+def valider_utilisateur(data: dict) -> Result[User, NonEmptyList[str]]:
     return validate_all(
-        [check_name, check_email, check_age],
+        [verifier_nom, verifier_email, verifier_age],
         data
     ).map(lambda d: User(**d))
 
-result = validate_user({"name": "", "email": "bad", "age": -5})
-# Err(NonEmptyList("Name is required", "Invalid email", "Age must be positive"))
+resultat = valider_utilisateur({"nom": "", "email": "erroné", "age": -5})
+# Err(NonEmptyList("Le nom est obligatoire", "Email invalide", "L'âge doit être positif"))
 ```
 
-Toutes les vérifications s'exécutent, toutes les erreurs sont collectées.
+Tous les tests sont effectués, et toutes les erreurs sont dûment collectées.
 
 ## API
 
-### Fonction
+### Fonction principale
 
 ```python
 from fptk.validate import validate_all
@@ -65,330 +65,77 @@ def validate_all(
 
 **Paramètres :**
 
-- `checks` : Itérable de fonctions de validation, chacune prenant une valeur et retournant `Result[T, E]`
-- `value` : La valeur à valider
+-   `checks` : un itérable de fonctions de validation. Chaque fonction prend la valeur en entrée et renvoie un `Result[T, E]`.
+-   `value` : la donnée à valider.
 
-**Retourne :**
+**Valeur de retour :**
 
-- `Ok(value)` si toutes les vérifications passent
-- `Err(NonEmptyList[E])` contenant toutes les erreurs si une vérification échoue
+-   `Ok(value)` si l'ensemble des vérifications a réussi.
+-   `Err(NonEmptyList[E])` contenant la liste exhaustive des erreurs en cas d'échec.
 
-## Fonctionnement
+## Fonctionnement technique
 
-### Implémentation
+### Principes clés
 
-```python
-def validate_all(checks, value):
-    errors = None
-    cur = value
+1.  **Exécution exhaustive** : contrairement à `bind`, nous ne nous arrêtons pas avant d'avoir parcouru l'intégralité des tests.
+2.  **Accumulation structurée** : les erreurs sont regroupées dans une [`NonEmptyList`](nelist.md).
+3.  **Transformation au fil de l'eau** : si un test renvoie une version transformée de la donnée (ex: `Ok(email_normalise)`), les tests suivants travailleront sur cette nouvelle version.
+4.  **Garantie de non-vacuité** : si la fonction renvoie un `Err`, celui-ci contient obligatoirement au moins une erreur.
 
-    for check in checks:
-        result = check(cur)
-        if isinstance(result, Ok):
-            cur = result.value  # Allow transformations
-        elif isinstance(result, Err):
-            err = result.error
-            if errors is None:
-                errors = NonEmptyList(err)
-            else:
-                errors = errors.append(err)
+## Exemples d'utilisation
 
-    return Ok(cur) if errors is None else Err(errors)
-```
-
-Points clés :
-
-1. **Toutes les vérifications s'exécutent** : Contrairement à `bind`, nous ne nous arrêtons pas à la première erreur
-2. **Les erreurs s'accumulent** : Collectées dans une `NonEmptyList`
-3. **La valeur peut être transformée** : Si une vérification retourne `Ok(transformed)`, les vérifications suivantes utilisent cette valeur
-4. **Garantie NonEmptyList** : Si nous retournons `Err`, il y a au moins une erreur
-
-### Les validateurs comme fonctions
-
-Chaque validateur est une fonction `T -> Result[T, E]` :
+### Validation complète d'un formulaire
 
 ```python
-def required(field: str) -> Callable[[dict], Result[dict, str]]:
-    def check(data: dict) -> Result[dict, str]:
-        if data.get(field):
-            return Ok(data)
-        return Err(f"{field} is required")
-    return check
-```
+# Définition des validateurs
+def est_requis(champ: str):
+    return lambda d: Ok(d) if d.get(champ) else Err(f"Le champ {champ} est obligatoire")
 
-## Exemples
+def format_email(champ: str):
+    def test(d):
+        email = d.get(champ, "")
+        return Ok(d) if "@" in email else Err(f"Format d'email invalide pour {champ}")
+    return test
 
-### Validation de formulaire
-
-```python
-from fptk.validate import validate_all
-from fptk.adt.result import Ok, Err
-
-# Define validators
-def required(field: str):
-    def check(data: dict):
-        if data.get(field):
-            return Ok(data)
-        return Err(f"{field} is required")
-    return check
-
-def email_format(field: str):
-    def check(data: dict):
-        email = data.get(field, "")
-        if "@" in email and "." in email:
-            return Ok(data)
-        return Err(f"{field} must be a valid email")
-    return check
-
-def min_length(field: str, n: int):
-    def check(data: dict):
-        value = data.get(field, "")
-        if len(value) >= n:
-            return Ok(data)
-        return Err(f"{field} must be at least {n} characters")
-    return check
-
-def age_range(min_age: int, max_age: int):
-    def check(data: dict):
-        age = data.get("age")
-        if age is None:
-            return Ok(data)  # Optional field
-        if not isinstance(age, int):
-            return Err("age must be a number")
-        if min_age <= age <= max_age:
-            return Ok(data)
-        return Err(f"age must be between {min_age} and {max_age}")
-    return check
-
-# Use validators
-def validate_signup(form: dict) -> Result[dict, NonEmptyList[str]]:
+# Utilisation combinée
+def valider_inscription(formulaire: dict):
     return validate_all([
-        required("username"),
-        required("email"),
-        required("password"),
-        email_format("email"),
-        min_length("username", 3),
-        min_length("password", 8),
-        age_range(13, 120),
-    ], form)
-
-# Test it
-bad_form = {
-    "username": "ab",
-    "email": "not-an-email",
-    "password": "123",
-    "age": 10,
-}
-
-result = validate_signup(bad_form)
-# Err(NonEmptyList(
-#   "email must be a valid email",
-#   "username must be at least 3 characters",
-#   "password must be at least 8 characters",
-#   "age must be between 13 and 120"
-# ))
+        est_requis("pseudo"),
+        est_requis("email"),
+        format_email("email"),
+        lambda d: Ok(d) if len(d.get("pseudo", "")) >= 3 else Err("Pseudo trop court")
+    ], formulaire)
 ```
 
-### Validation de requête API
+### Transformation lors de la validation
+
+Les validateurs peuvent également nettoyer les données avant qu'elles n'atteignent les tests suivants :
 
 ```python
-from fptk.validate import validate_all
-from fptk.core.func import pipe
-
-def validate_request(request: dict) -> Result[dict, NonEmptyList[str]]:
-    return validate_all([
-        # Required fields
-        required("method"),
-        required("path"),
-
-        # Method validation
-        lambda r: (
-            Ok(r) if r.get("method") in ["GET", "POST", "PUT", "DELETE"]
-            else Err("Invalid HTTP method")
-        ),
-
-        # Path validation
-        lambda r: (
-            Ok(r) if r.get("path", "").startswith("/")
-            else Err("Path must start with /")
-        ),
-
-        # Body validation for POST/PUT
-        lambda r: (
-            Ok(r) if r.get("method") not in ["POST", "PUT"] or r.get("body")
-            else Err("Body required for POST/PUT")
-        ),
-    ], request)
-
-# Handle the result
-def process_request(request: dict):
-    return validate_request(request).match(
-        ok=lambda r: handle_valid_request(r),
-        err=lambda errors: {
-            "status": 400,
-            "errors": list(errors)
-        }
-    )
-```
-
-### Bibliothèque de validateurs réutilisables
-
-```python
-from fptk.validate import validate_all
-from fptk.adt.result import Ok, Err
-import re
-
-# Generic validators
-def is_string(field: str):
-    return lambda d: (
-        Ok(d) if isinstance(d.get(field), str)
-        else Err(f"{field} must be a string")
-    )
-
-def is_int(field: str):
-    return lambda d: (
-        Ok(d) if isinstance(d.get(field), int)
-        else Err(f"{field} must be an integer")
-    )
-
-def matches(field: str, pattern: str, message: str):
-    regex = re.compile(pattern)
-    return lambda d: (
-        Ok(d) if regex.match(d.get(field, ""))
-        else Err(message)
-    )
-
-def one_of(field: str, options: list):
-    return lambda d: (
-        Ok(d) if d.get(field) in options
-        else Err(f"{field} must be one of: {', '.join(map(str, options))}")
-    )
-
-def depends_on(field: str, condition_field: str, condition_value):
-    """field is required when condition_field == condition_value"""
-    return lambda d: (
-        Ok(d) if d.get(condition_field) != condition_value or d.get(field)
-        else Err(f"{field} is required when {condition_field} is {condition_value}")
-    )
-
-# Compose validators
-user_validators = [
-    required("name"),
-    is_string("name"),
-    min_length("name", 2),
-
-    required("email"),
-    matches("email", r"^[\w.-]+@[\w.-]+\.\w+$", "Invalid email format"),
-
-    one_of("role", ["admin", "user", "guest"]),
-
-    depends_on("department", "role", "admin"),
-]
-```
-
-### Transformation pendant la validation
-
-Les validateurs peuvent transformer les données :
-
-```python
-def normalize_email(data: dict) -> Result[dict, str]:
-    """Lowercase and strip the email."""
+def normaliser_email(data: dict) -> Result[dict, str]:
+    """Passe l'email en minuscules et retire les espaces superflus."""
     if "email" in data:
-        normalized = {**data, "email": data["email"].lower().strip()}
-        return Ok(normalized)
+        data["email"] = data["email"].lower().strip()
     return Ok(data)
 
-def trim_strings(data: dict) -> Result[dict, str]:
-    """Strip whitespace from all string fields."""
-    return Ok({
-        k: v.strip() if isinstance(v, str) else v
-        for k, v in data.items()
-    })
-
-result = validate_all([
-    trim_strings,      # Transform first
-    normalize_email,
-    required("email"),
-    email_format("email"),
-], form)
-# The validation runs on normalized data
+resultat = validate_all([
+    normaliser_email,  # La donnée est nettoyée d'abord
+    est_requis("email"),
+    format_email("email") # Le test s'effectue sur l'email nettoyé
+], mon_formulaire)
 ```
 
-### Validation imbriquée
+## `validate_all` vs `traverse_result` : que choisir ?
 
-```python
-def validate_address(data: dict) -> Result[dict, NonEmptyList[str]]:
-    return validate_all([
-        required("street"),
-        required("city"),
-        required("country"),
-        lambda d: (
-            Ok(d) if len(d.get("postal_code", "")) >= 5
-            else Err("Postal code must be at least 5 characters")
-        ),
-    ], data)
-
-def validate_user_with_address(data: dict) -> Result[dict, NonEmptyList[str]]:
-    # Validate user fields
-    user_result = validate_all([
-        required("name"),
-        required("email"),
-    ], data)
-
-    # Validate nested address
-    address_result = validate_address(data.get("address", {}))
-
-    # Combine results
-    match (user_result, address_result):
-        case (Ok(_), Ok(_)):
-            return Ok(data)
-        case (Err(e1), Ok(_)):
-            return Err(e1)
-        case (Ok(_), Err(e2)):
-            return Err(e2)
-        case (Err(e1), Err(e2)):
-            # Combine error lists
-            combined = e1
-            for e in e2:
-                combined = combined.append(f"address.{e}")
-            return Err(combined)
-```
-
-## Quand utiliser validate_all
-
-**Utilisez validate_all quand :**
-
-- Vous voulez afficher toutes les erreurs de validation en une fois
-- Vous validez une saisie utilisateur (formulaires, requêtes API)
-- Chaque validation est indépendante
-- Une meilleure UX est importante
-
-**Utilisez une chaîne de bind quand :**
-
-- Les validations dépendent les unes des autres
-- Vous n'avez besoin que de la première erreur
-- Le comportement court-circuit est souhaité
-
-## validate_all vs traverse_result
-
-| Fonction | Comportement des erreurs | Type de retour |
-|----------|---------------|-------------|
-| `traverse_result` | Fail-fast (première erreur) | `Result[list[T], E]` |
-| `validate_all` | Accumule toutes les erreurs | `Result[T, NonEmptyList[E]]` |
-
-```python
-# traverse_result: stop at first error
-traverse_result(["bad1", "bad2"], parse)
-# Err("bad1 is invalid")
-
-# validate_all: collect all errors
-validate_all([check1, check2, check3], value)
-# Err(NonEmptyList("error1", "error2"))
-```
+| Caractéristique | `traverse_result` | `validate_all` |
+| :--- | :--- | :--- |
+| **Comportement** | S'arrête dès la première erreur (fail-fast). | Parcourt tout et accumule (accumulate). |
+| **Type de retour** | `Result[list[T], E]` | `Result[T, NonEmptyList[E]]` |
+| **Cas d'usage** | Logique technique interne. | Saisie de données par un utilisateur. |
 
 ## Voir aussi
 
-- [`Result`](result.md) - Le type Result sous-jacent
-- [`NonEmptyList`](nelist.md) - Le type de collection d'erreurs
-- [`traverse_result`](traverse.md) - Pour le traitement fail-fast de collections
-- [Recette développement API](../recipes/api-development.md) - Validation dans les APIs web
+-   [`Result`](result.md) — Le type de base gérant les succès et les échecs.
+-   [`NonEmptyList`](nelist.md) — La structure utilisée pour regrouper les erreurs.
+-   [`traverse_result`](traverse.md) — Pour un traitement de collection avec arrêt immédiat.
+-   [Développement d'API](../recipes/api-development.md) — Exemples concrets dans des points d'entrée web.

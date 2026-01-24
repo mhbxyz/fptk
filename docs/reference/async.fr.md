@@ -1,17 +1,17 @@
-# Outils Async
+# Outils asynchrones (Async)
 
-`fptk.async_tools` fournit des utilitaires pour travailler avec les opérations async et les types `Result` ensemble.
+Le module `fptk.async_tools` propose des utilitaires pour orchestrer harmonieusement les opérations asynchrones (`async`) avec les types `Result`.
 
-## Concept : Async et Result
+## Concept : Allier Async et Result
 
-Lorsque vous travaillez avec du code async, les opérations retournent souvent des types `Result` pour gérer les erreurs. Vous avez fréquemment besoin de :
+Dans un environnement asynchrone, les opérations renvoient fréquemment des types `Result` pour signaler leurs succès ou leurs échecs. Vous êtes ainsi souvent amené à :
 
-1. Exécuter plusieurs opérations async en parallèle
-2. Collecter leurs résultats dans un seul `Result`
-3. Gérer les erreurs de manière appropriée (fail-fast ou accumulation)
+1.  Lancer plusieurs tâches asynchrones en parallèle.
+2.  Regrouper leurs issues respectives dans un unique `Result` global.
+3.  Traiter les erreurs de façon structurée (arrêt immédiat ou accumulation).
 
 ```python
-# Multiple async operations that might fail
+# Plusieurs opérations asynchrones susceptibles d'échouer
 users = await gather_results([
     fetch_user(1),  # async -> Result[User, str]
     fetch_user(2),
@@ -20,27 +20,27 @@ users = await gather_results([
 # users: Result[list[User], str]
 ```
 
-Cela est important car :
+Cette approche est essentielle pour garantir :
 
-- **Exécution concurrente** : Exécutez les opérations I/O en parallèle
-- **Gestion d'erreurs unifiée** : Combinez les patterns async et Result
-- **Sémantique cohérente** : Choisissez fail-fast ou accumulation d'erreurs
+-   **Une exécution concurrente** : optimisez vos performances en parallélisant les E/S.
+-   **Une gestion d'erreurs unifiée** : faites converger naturellement les modèles `async` et `Result`.
+-   **Une sémantique claire** : choisissez explicitement entre un arrêt au premier échec (fail-fast) ou la collecte de toutes les erreurs.
 
 ## API
 
 ### Fonctions
 
 | Fonction | Signature | Description |
-|----------|-----------|-------------|
-| `async_pipe(x, *fns)` | `async (T, *Callables) -> U` | Passe une valeur à travers des fonctions async/sync |
-| `gather_results(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], E]` | Collecte les résultats, fail-fast |
-| `gather_results_accumulate(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], list[E]]` | Collecte les résultats, accumule les erreurs |
+| :--- | :--- | :--- |
+| `async_pipe(x, *fns)` | `async (T, *Callables) -> U` | Fait circuler une valeur à travers une suite de fonctions synchrones ou asynchrones. |
+| `gather_results(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], E]` | Collecte les résultats en s'arrêtant à la première erreur rencontrée (fail-fast). |
+| `gather_results_accumulate(tasks)` | `async (Iterable[Awaitable[Result[T, E]]]) -> Result[list[T], list[E]]` | Collecte tous les résultats et l'ensemble des erreurs rencontrées. |
 
-## Fonctionnement
+## Fonctionnement technique
 
 ### `async_pipe`
 
-Passe une valeur à travers une séquence de fonctions, en attendant celles qui retournent des awaitables :
+Cette fonction fait transiter une valeur à travers une séquence de fonctions. Elle détecte et attend (`await`) automatiquement toute valeur de retour étant un « awaitable » :
 
 ```python
 async def async_pipe(x, *funcs):
@@ -51,11 +51,11 @@ async def async_pipe(x, *funcs):
     return x
 ```
 
-Permet de mélanger des fonctions sync et async dans le même pipeline.
+Elle permet ainsi de mélanger toute liberté des fonctions synchrones et asynchrones au sein d'un même pipeline.
 
 ### `gather_results`
 
-Exécute toutes les tâches en parallèle, retourne la première erreur ou tous les succès :
+Elle lance toutes les tâches de front et renvoie soit la première erreur survenue, soit la liste complète des succès :
 
 ```python
 async def gather_results(tasks):
@@ -75,11 +75,11 @@ async def gather_results(tasks):
     return Ok(values)
 ```
 
-**Note** : Toutes les tâches s'exécutent jusqu'à la fin (pas d'annulation à la première erreur).
+**Note importante** : même en cas d'erreur, toutes les tâches lancées vont jusqu'à leur terme (aucune annulation n'est déclenchée par la première erreur).
 
 ### `gather_results_accumulate`
 
-Comme `gather_results`, mais collecte toutes les erreurs :
+Similaire à `gather_results`, cette variante ne s'arrête jamais en cours de route et collecte systématiquement toutes les erreurs :
 
 ```python
 async def gather_results_accumulate(tasks):
@@ -99,9 +99,9 @@ async def gather_results_accumulate(tasks):
     return Ok(values)
 ```
 
-## Exemples
+## Exemples d'utilisation
 
-### Récupération concurrente basique
+### Récupération concurrente simple
 
 ```python
 from fptk.async_tools import gather_results
@@ -110,23 +110,23 @@ from fptk.adt.result import Ok, Err
 async def fetch_user(id: int) -> Result[User, str]:
     try:
         user = await db.async_get(id)
-        return Ok(user) if user else Err(f"User {id} not found")
+        return Ok(user) if user else Err(f"Utilisateur {id} introuvable")
     except Exception as e:
-        return Err(f"Database error: {e}")
+        return Err(f"Erreur de base de données : {e}")
 
 async def fetch_all_users(ids: list[int]) -> Result[list[User], str]:
     tasks = [fetch_user(id) for id in ids]
     return await gather_results(tasks)
 
-# Usage
+# Utilisation
 result = await fetch_all_users([1, 2, 3])
 result.match(
-    ok=lambda users: print(f"Got {len(users)} users"),
-    err=lambda e: print(f"Failed: {e}")
+    ok=lambda users: print(f"{len(users)} utilisateurs récupérés"),
+    err=lambda e: print(f"Échec : {e}")
 )
 ```
 
-### Accumuler toutes les erreurs
+### Accumulation de toutes les erreurs
 
 ```python
 from fptk.async_tools import gather_results_accumulate
@@ -134,24 +134,24 @@ from fptk.async_tools import gather_results_accumulate
 async def validate_user_async(id: int) -> Result[User, str]:
     user = await fetch_user(id)
     if not user:
-        return Err(f"User {id} not found")
+        return Err(f"Utilisateur {id} introuvable")
     if not user.email:
-        return Err(f"User {id} has no email")
+        return Err(f"L'utilisateur {id} n'a pas d'email")
     return Ok(user)
 
 async def validate_batch(ids: list[int]) -> Result[list[User], list[str]]:
     tasks = [validate_user_async(id) for id in ids]
     return await gather_results_accumulate(tasks)
 
-# Get all errors at once
+# Récupération de l'ensemble des erreurs en une fois
 result = await validate_batch([1, 2, 3, 4, 5])
 result.match(
-    ok=lambda users: print(f"All valid: {len(users)} users"),
-    err=lambda errors: print(f"Errors: {errors}")
+    ok=lambda users: print(f"Tous valides : {len(users)} utilisateurs"),
+    err=lambda errors: print(f"Erreurs détectées : {errors}")
 )
 ```
 
-### Pipeline async
+### Pipeline asynchrone mixte
 
 ```python
 from fptk.async_tools import async_pipe
@@ -161,7 +161,7 @@ async def fetch_user(id: int) -> User:
 
 def validate(user: User) -> User:
     if not user.active:
-        raise ValueError("User inactive")
+        raise ValueError("Utilisateur inactif")
     return user
 
 async def enrich_with_posts(user: User) -> User:
@@ -171,7 +171,7 @@ async def enrich_with_posts(user: User) -> User:
 def format_response(user: User) -> dict:
     return {"user": user.to_dict()}
 
-# Mix sync and async seamlessly
+# Combinaison fluide de fonctions sync et async
 response = await async_pipe(
     user_id,
     fetch_user,        # async
@@ -181,35 +181,7 @@ response = await async_pipe(
 )
 ```
 
-### Appels API parallèles
-
-```python
-from fptk.async_tools import gather_results
-import aiohttp
-
-async def fetch_url(url: str) -> Result[dict, str]:
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    return Ok(await response.json())
-                return Err(f"HTTP {response.status} for {url}")
-    except Exception as e:
-        return Err(f"Request failed: {e}")
-
-async def fetch_all_apis(urls: list[str]) -> Result[list[dict], str]:
-    tasks = [fetch_url(url) for url in urls]
-    return await gather_results(tasks)
-
-# Fetch multiple APIs concurrently
-data = await fetch_all_apis([
-    "https://api.example.com/users",
-    "https://api.example.com/posts",
-    "https://api.example.com/comments",
-])
-```
-
-### Traitement par lots avec Results
+### Traitement par lots avec contrôle de concurrence
 
 ```python
 from fptk.async_tools import gather_results
@@ -220,10 +192,10 @@ async def process_item(item: Item) -> Result[Processed, str]:
         result = await external_api.process(item)
         return Ok(result)
     except Exception as e:
-        return Err(f"Failed to process {item.id}: {e}")
+        return Err(f"Échec du traitement pour {item.id} : {e}")
 
 async def process_batch(items: list[Item], batch_size: int = 10):
-    """Process items in batches with concurrency control."""
+    """Traite les éléments par lots pour limiter la charge."""
     all_results = []
 
     for batch in chunk(items, batch_size):
@@ -231,121 +203,44 @@ async def process_batch(items: list[Item], batch_size: int = 10):
         batch_result = await gather_results(tasks)
 
         if batch_result.is_err():
-            return batch_result  # Fail-fast on batch error
+            return batch_result  # Arrêt immédiat en cas d'erreur sur un lot
 
         all_results.extend(batch_result.unwrap())
 
     return Ok(all_results)
 ```
 
-### Combinaison avec Traverse
-
-```python
-from fptk.adt.traverse import traverse_result_async
-from fptk.async_tools import gather_results
-
-# Sequential async (one at a time)
-result = await traverse_result_async(ids, fetch_user)
-
-# Parallel async (all at once)
-result = await gather_results([fetch_user(id) for id in ids])
-
-# Choose based on:
-# - Rate limits: use sequential
-# - Performance: use parallel
-# - Resource constraints: use batched parallel
-```
-
-### Récupération d'erreurs
-
-```python
-from fptk.async_tools import gather_results_accumulate
-from fptk.adt.result import Ok, Err
-
-async def fetch_with_retry(id: int, retries: int = 3) -> Result[User, str]:
-    for attempt in range(retries):
-        result = await fetch_user(id)
-        if result.is_ok():
-            return result
-        # Wait before retry
-        await asyncio.sleep(2 ** attempt)
-    return Err(f"Failed after {retries} retries for {id}")
-
-async def fetch_best_effort(ids: list[int]):
-    """Fetch all, log errors, return what succeeded."""
-    result = await gather_results_accumulate(
-        [fetch_with_retry(id) for id in ids]
-    )
-
-    return result.match(
-        ok=lambda users: users,
-        err=lambda errors: {
-            "partial_results": [],  # Would need more complex handling
-            "errors": errors
-        }
-    )
-```
-
-### Gestion du timeout
-
-```python
-from fptk.async_tools import gather_results
-
-async def fetch_with_timeout(id: int, timeout: float = 5.0) -> Result[User, str]:
-    try:
-        user = await asyncio.wait_for(fetch_user_raw(id), timeout=timeout)
-        return Ok(user)
-    except asyncio.TimeoutError:
-        return Err(f"Timeout fetching user {id}")
-    except Exception as e:
-        return Err(str(e))
-
-async def fetch_all_with_timeout(ids: list[int]) -> Result[list[User], str]:
-    return await gather_results(
-        [fetch_with_timeout(id) for id in ids]
-    )
-```
-
 ## Comparaison : gather_results vs gather_results_accumulate
 
-| Fonction | À la première erreur | Type de retour | À utiliser quand |
-|----------|---------------|-------------|----------|
-| `gather_results` | S'arrête (mais les tâches continuent) | `Result[list[T], E]` | Vous n'avez besoin que de la première erreur |
-| `gather_results_accumulate` | Collecte toutes | `Result[list[T], list[E]]` | Vous voulez toutes les erreurs |
+| Aspect | `gather_results` | `gather_results_accumulate` |
+| :--- | :--- | :--- |
+| **En cas d'erreur** | S'arrête logiquement (mais les tâches en cours se terminent). | Collecte toutes les erreurs rencontrées. |
+| **Type de retour** | `Result[list[T], E]` | `Result[list[T], list[E]]` |
+| **Cas d'usage** | Vous n'avez besoin que du signal de premier échec. | Vous exigez un rapport exhaustif des anomalies. |
 
-```python
-# Fail-fast semantics
-await gather_results([ok1, err1, err2, ok2])
-# Err(err1.error) - only first error
+## Quand utiliser ces outils ?
 
-# Accumulate semantics
-await gather_results_accumulate([ok1, err1, err2, ok2])
-# Err([err1.error, err2.error]) - all errors
-```
+**Privilégiez `gather_results` lorsque :**
 
-## Quand utiliser les outils async
+-   Vous lancez des opérations asynchrones indépendantes.
+-   Un seul échec suffit à invalider l'ensemble du processus.
+-   Vous récupérez plusieurs ressources dont la totalité est requise.
 
-**Utilisez gather_results quand :**
+**Privilégiez `gather_results_accumulate` lorsque :**
 
-- Vous exécutez des opérations async indépendantes en parallèle
-- Vous voulez un comportement fail-fast
-- Vous récupérez plusieurs ressources en parallèle
+-   Vous avez besoin d'une visibilité complète sur tous les échecs possibles.
+-   Vous effectuez des validations de masse en parallèle.
+-   Vous construisez des rapports d'erreurs détaillés.
 
-**Utilisez gather_results_accumulate quand :**
+**Privilégiez `async_pipe` lorsque :**
 
-- Vous avez besoin de voir toutes les erreurs
-- Vous validez plusieurs éléments en parallèle
-- Vous construisez des rapports d'erreurs complets
-
-**Utilisez async_pipe quand :**
-
-- Vous construisez des pipelines de transformation async
-- Vous mélangez des fonctions sync et async
-- Vous voulez un flux de données linéaire et lisible
+-   Vous concevez des pipelines de transformation asynchrones.
+-   Votre logique mêle étroitement fonctions synchrones et asynchrones.
+-   Vous visez un flux de données linéaire, propre et lisible.
 
 ## Voir aussi
 
-- [`Result`](result.md) - Le type Result sous-jacent
-- [`traverse_result_async`](traverse.md) - Traversal async séquentiel
-- [Recette développement API](../recipes/api-development.md) - Async dans les APIs web
-- [Recette traitement de données](../recipes/data-processing.md) - Traitement par lots async
+-   [`Result`](result.md) — Le type `Result` fondamental.
+-   [`traverse_result_async`](traverse.md) — Pour un parcours asynchrone séquentiel.
+-   [Développement d'API](../recipes/api-development.md) — L'asynchrone dans les contextes web.
+-   [Traitement de données](../recipes/data-processing.md) — Le traitement par lots asynchrone.

@@ -1,137 +1,119 @@
 # Option
 
-`fptk.adt.option` fournit le type `Option` pour gérer les valeurs qui pourraient être absentes. Au lieu d'utiliser `None` et de le vérifier partout, `Option` rend l'absence explicite et composable.
+Le module `fptk.adt.option` définit le type `Option`, conçu pour gérer élégamment les valeurs susceptibles d'être absentes. Plutôt que d'utiliser `None` et de multiplier les vérifications manuelles, `Option` rend l'absence de valeur explicite, robuste et parfaitement composable.
 
-## Concept : La Monade Maybe/Option
+## Concept : La Monade Option (ou Maybe)
 
-En programmation fonctionnelle, `Option` (aussi appelé `Maybe` en Haskell) représente une valeur qui pourrait ne pas exister. Elle a deux cas :
+En programmation fonctionnelle, `Option` (souvent appelée `Maybe` dans d'autres langages comme Haskell) représente un conteneur pour une valeur qui peut, ou non, exister. Elle se décline en deux variantes :
 
-- **Some(value)** : La valeur est présente
-- **Nothing** : La valeur est absente
+-   **`Some(value)`** : la valeur est présente.
+-   **`Nothing`** : la valeur est absente.
 
-Cela est important car :
+Cette approche est essentielle pour :
 
-- **Pas d'exceptions de pointeur nul** : Vous ne pouvez pas accidentellement appeler des méthodes sur `None`
-- **Absence explicite** : La signature de type vous indique qu'une valeur pourrait être manquante
-- **Transformations composables** : Enchaîner des opérations qui gèrent gracieusement les valeurs manquantes
+-   **Éliminer les exceptions de pointeur nul** : vous ne pouvez plus appeler accidentellement des méthodes sur une valeur `None`.
+-   **Rendre l'absence explicite** : la signature de type vous avertit directement qu'une valeur peut manquer.
+-   **Composer les transformations** : enchaînez vos opérations en laissant le type `Option` gérer gracieusement les cas d'absence.
 
 ### Le problème avec `None`
 
 ```python
-user = get_user(id)
-name = user.get("profile").get("name").upper()  # AttributeError if any is None!
+utilisateur = get_user(id)
+# Risque d'AttributeError à chaque étape si l'une des valeurs est None !
+nom = utilisateur.get("profile").get("name").upper()
 
-# Defensive coding everywhere
-if user and user.get("profile") and user.get("profile").get("name"):
-    name = user["profile"]["name"].upper()
+# On se retrouve à écrire du code défensif partout :
+if utilisateur and utilisateur.get("profile") and utilisateur.get("profile").get("name"):
+    nom = utilisateur["profile"]["name"].upper()
 else:
-    name = "Anonymous"
+    nom = "Anonyme"
 ```
 
-### La solution Option
+### La solution avec `Option`
 
 ```python
 from fptk.adt.option import from_nullable, Some, NOTHING
 
-name = (
+nom = (
     from_nullable(get_user(id))
     .bind(lambda u: from_nullable(u.get("profile")))
     .bind(lambda p: from_nullable(p.get("name")))
     .map(str.upper)
-    .unwrap_or("Anonymous")
+    .unwrap_or("Anonyme")
 )
 ```
 
-Chaque `.bind()` court-circuite vers `NOTHING` si l'étape précédente était absente. Pas d'exceptions, pas de conditionnels imbriqués.
+Chaque appel à `.bind()` court-circuite immédiatement vers `NOTHING` si l'étape précédente a échoué. Fini les exceptions et les blocs conditionnels imbriqués.
 
 ## API
 
 ### Types
 
 | Type | Description |
-|------|-------------|
-| `Option[T]` | Type de base représentant une valeur optionnelle |
-| `Some[T]` | Variante contenant une valeur présente |
-| `Nothing` | Variante représentant l'absence (classe singleton) |
-| `NOTHING` | L'instance singleton de `Nothing` |
+| :--- | :--- |
+| `Option[T]` | Type de base représentant une valeur optionnelle. |
+| `Some[T]` | Variante contenant une valeur présente. |
+| `Nothing` | Variante représentant l'absence (classe singleton). |
+| `NOTHING` | L'instance unique (singleton) de `Nothing`. |
 
 ### Constructeurs
 
 ```python
 from fptk.adt.option import Some, NOTHING, from_nullable
 
-# Directly construct
+# Construction directe
 present = Some(42)
 absent = NOTHING
 
-# From nullable value
-from_nullable(some_value)  # Some(x) if x is not None, else NOTHING
+# Depuis une valeur potentiellement None
+from_nullable(ma_valeur)  # Some(x) si x n'est pas None, sinon NOTHING
 ```
 
-### Méthodes
+### Méthodes principales
 
 | Méthode | Signature | Description |
-|---------|-----------|-------------|
-| `is_some()` | `() -> bool` | Retourne `True` si `Some` |
-| `is_none()` | `() -> bool` | Retourne `True` si `Nothing` |
-| `map(f)` | `(T -> U) -> Option[U]` | Transformer la valeur si présente |
-| `bind(f)` | `(T -> Option[U]) -> Option[U]` | Enchaîner des fonctions retournant Option |
-| `and_then(f)` | `(T -> Option[U]) -> Option[U]` | Alias pour `bind` (nommage Rust) |
-| `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combiner deux Options en tuple |
-| `zip_with(other, f)` | `(Option[U], (T, U) -> R) -> Option[R]` | Combiner deux Options avec une fonction |
-| `unwrap_or(default)` | `(U) -> T | U` | Obtenir la valeur ou une valeur par défaut |
-| `or_else(alt)` | `(Option[T] | () -> Option[T]) -> Option[T]` | Alternative si absent |
-| `to_result(err)` | `(E) -> Result[T, E]` | Convertir en Result |
-| `match(some, none)` | `(T -> U, () -> U) -> U` | Pattern matching |
-| `unwrap()` | `() -> T` | Obtenir la valeur ou lever ValueError |
-| `expect(msg)` | `(str) -> T` | Obtenir la valeur ou lever avec un message |
+| :--- | :--- | :--- |
+| `is_some()` | `() -> bool` | Renvoie `True` s'il s'agit d'un `Some`. |
+| `is_none()` | `() -> bool` | Renvoie `True` s'il s'agit d'un `Nothing`. |
+| `map(f)` | `(T -> U) -> Option[U]` | Applique `f` à la valeur si elle est présente. |
+| `bind(f)` | `(T -> Option[U]) -> Option[U]` | Enchaîne une fonction retournant elle-même une `Option`. |
+| `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine deux `Option` en un tuple de valeurs. |
+| `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
+| `or_else(alt)` | `(Option[T] \| () -> Option[T]) -> Option[T]` | Fournit une alternative si la valeur est absente. |
+| `to_result(err)` | `(E) -> Result[T, E]` | Convertit l'`Option` en `Result`. |
+| `match(some, none)` | `(T -> U, () -> U) -> U` | Effectue un pattern matching sur les deux cas. |
+| `unwrap()` | `() -> T` | Récupère la valeur ou lève une `ValueError`. |
 
-### Méthodes asynchrones
+### `or_else` : Évaluation immédiate vs paresseuse
 
-| Méthode | Signature | Description |
-|---------|-----------|-------------|
-| `map_async(f)` | `async (T -> U) -> Option[U]` | Transformation asynchrone |
-| `bind_async(f)` | `async (T -> Option[U]) -> Option[U]` | Enchaînement asynchrone |
-
-### or_else : Eager vs Lazy
-
-`or_else` accepte à la fois une valeur `Option` directe et un callable retournant `Option` :
+`or_else` accepte indifféremment une valeur `Option` directe ou un callable (fonction) renvoyant une `Option` :
 
 ```python
 from fptk.adt.option import Some, NOTHING
 
-# Eager: value is always evaluated
-result = NOTHING.or_else(Some(42))  # Some(42)
+# Immédiat : la valeur est toujours évaluée
+res1 = NOTHING.or_else(Some(42))
 
-# Lazy: callable only invoked if needed
-result = NOTHING.or_else(lambda: Some(expensive_computation()))
+# Paresseux : la fonction n'est appelée que si nécessaire
+res2 = NOTHING.or_else(lambda: Some(calcul_couteux()))
 ```
 
-**Quand utiliser lequel :**
+**Quel usage privilégier ?**
 
-| Patron | Syntaxe | Utiliser quand |
-|--------|---------|----------------|
-| Eager | `.or_else(Some(x))` | La valeur par défaut est peu coûteuse/déjà calculée |
-| Lazy | `.or_else(lambda: ...)` | La valeur par défaut est coûteuse ou a des effets de bord |
+| Style | Syntaxe | Quand l'utiliser ? |
+| :--- | :--- | :--- |
+| **Immédiat** | `.or_else(Some(x))` | La valeur de repli est simple ou déjà calculée. |
+| **Paresseux** | `.or_else(lambda: ...)` | Le calcul du repli est coûteux ou déclenche des effets de bord. |
 
-```python
-# Fallback chain with lazy evaluation
-config_value = (
-    from_nullable(os.getenv("MY_VAR"))
-    .or_else(lambda: from_nullable(config_file.get("my_var")))  # Only if env missing
-    .or_else(Some("default"))  # Cheap, can be eager
-)
-```
-
-## Fonctionnement
+## Fonctionnement technique
 
 ### Structure de données
 
-`Option` est implémenté comme un type scellé avec deux variantes :
+`Option` est implémentée comme un type scellé avec deux variantes distinctes :
 
 ```python
 class Option[T]:
-    """Base class - not instantiated directly."""
+    """Classe de base - non instanciable directement."""
     pass
 
 @dataclass(frozen=True, slots=True)
@@ -142,14 +124,14 @@ class Some[T](Option[T]):
 class Nothing(Option[None]):
     pass
 
-NOTHING = Nothing()  # Singleton
+NOTHING = Nothing()  # Instance unique
 ```
 
-Le `@dataclass(frozen=True, slots=True)` rend les instances immuables et économes en mémoire.
+L'usage de `@dataclass(frozen=True)` garantit l'immuabilité et l'efficacité mémoire des instances.
 
 ### Le Functor : `map`
 
-`map` applique une fonction à la valeur à l'intérieur de `Some`, ou ne fait rien pour `Nothing` :
+`map` applique une transformation à la valeur contenue dans un `Some`, mais ne fait rien dans le cas d'un `Nothing` :
 
 ```python
 def map(self, f):
@@ -158,44 +140,27 @@ def map(self, f):
     return NOTHING
 ```
 
-C'est l'opération **Functor** : élever une fonction `A -> B` pour qu'elle fonctionne sur `Option[A] -> Option[B]`.
-
 ### La Monade : `bind`
 
-`bind` (aussi appelé `flatMap` ou `>>=`) enchaîne des opérations qui retournent elles-mêmes des `Option` :
+`bind` (parfois appelé `flatMap` ou `and_then`) permet d'enchaîner des opérations qui renvoient elles-mêmes des `Option`. Elle évite ainsi de se retrouver avec des structures imbriquées du type `Option[Option[T]]` :
 
 ```python
 def bind(self, f):
     if isinstance(self, Some):
-        return f(self.value)  # f returns Option[U]
+        return f(self.value)  # f doit renvoyer une Option[U]
     return NOTHING
 ```
 
-C'est l'opération **Monade**. Elle évite les `Option[Option[T]]` imbriqués en "aplatissant" le résultat.
+## Exemples d'utilisation
 
-### Pourquoi `bind` vs `map` ?
-
-- Utilisez `map` quand votre fonction retourne une valeur simple : `lambda x: x + 1`
-- Utilisez `bind` quand votre fonction retourne un `Option` : `lambda x: from_nullable(lookup(x))`
-
-```python
-# map: str -> str (plain value)
-Some("hello").map(str.upper)  # Some("HELLO")
-
-# bind: str -> Option[int] (returns Option)
-Some("42").bind(lambda s: from_nullable(safe_parse(s)))  # Some(42) or NOTHING
-```
-
-## Exemples
-
-### Accès sûr aux dictionnaires
+### Accès sécurisé aux structures imbriquées
 
 ```python
 from fptk.adt.option import from_nullable
 
 config = {"database": {"host": "localhost", "port": 5432}}
 
-# Chain lookups safely
+# Parcours sécurisé de dictionnaires imbriqués
 port = (
     from_nullable(config.get("database"))
     .bind(lambda db: from_nullable(db.get("port")))
@@ -204,95 +169,49 @@ port = (
 )
 ```
 
-### Analyse de l'entrée utilisateur
-
-```python
-def parse_int(s: str) -> Option[int]:
-    try:
-        return Some(int(s))
-    except ValueError:
-        return NOTHING
-
-def parse_positive(s: str) -> Option[int]:
-    return parse_int(s).bind(
-        lambda n: Some(n) if n > 0 else NOTHING
-    )
-
-parse_positive("42")   # Some(42)
-parse_positive("-1")   # NOTHING
-parse_positive("abc")  # NOTHING
-```
-
-### Première valeur disponible
+### Première valeur disponible (chaîne de repli)
 
 ```python
 from fptk.adt.option import from_nullable, NOTHING
 
-def get_config_value(key: str) -> Option[str]:
-    """Try environment, then file, then default."""
+def obtenir_config(cle: str) -> Option[str]:
+    """Tente de lire dans l'environnement, puis dans un fichier, puis utilise une valeur par défaut."""
     return (
-        from_nullable(os.getenv(key))
-        .or_else(lambda: from_nullable(config_file.get(key)))
-        .or_else(lambda: from_nullable(defaults.get(key)))
+        from_nullable(os.getenv(cle))
+        .or_else(lambda: from_nullable(config_fichier.get(cle)))
+        .or_else(lambda: from_nullable(valeurs_defaut.get(cle)))
     )
 ```
 
-### Pattern Matching
-
-```python
-def describe(opt: Option[int]) -> str:
-    return opt.match(
-        some=lambda n: f"Got number: {n}",
-        none=lambda: "No value"
-    )
-
-describe(Some(42))  # "Got number: 42"
-describe(NOTHING)   # "No value"
-```
-
-### Conversion en Result
+### Conversion vers Result
 
 ```python
 from fptk.adt.option import from_nullable
 
-def find_user(id: int) -> Option[User]:
+def chercher_utilisateur(id: int) -> Option[User]:
     return from_nullable(db.get(id))
 
-# Convert to Result for error handling
-result = find_user(42).to_result(f"User {id} not found")
-# Ok(user) or Err("User 42 not found")
+# Conversion pour une gestion d'erreurs plus détaillée
+resultat = chercher_utilisateur(42).to_result(f"Utilisateur {id} introuvable")
+# Ok(user) ou Err("Utilisateur 42 introuvable")
 ```
 
-### Itération
+## Quand utiliser Option ?
 
-```python
-from fptk.adt.option import Some, NOTHING
+**Privilégiez Option lorsque :**
 
-# Option implements __iter__ for zero-or-one elements
-for value in Some(42):
-    print(value)  # Prints 42
+-   Une valeur peut être légitimement absente (ce n'est pas forcément une erreur).
+-   Vous voulez enchaîner des opérations pouvant échouer à tout moment.
+-   Vous effectuez des recherches ou des analyses de données incertaines.
+-   Vous souhaitez éradiquer les tests sur `None` dispersés dans votre code.
 
-for value in NOTHING:
-    print(value)  # Never executes
-```
+**Évitez Option lorsque :**
 
-## Quand utiliser Option
-
-**Utilisez Option quand :**
-
-- Une valeur peut légitimement être absente (pas une condition d'erreur)
-- Vous voulez enchaîner des transformations qui peuvent échouer
-- Vous analysez ou recherchez des valeurs qui pourraient ne pas exister
-- Vous voulez éviter les vérifications de `None` dispersées dans votre code
-
-**N'utilisez pas Option quand :**
-
-- L'absence représente une erreur qui devrait être signalée → utilisez `Result`
-- Vous avez besoin de savoir pourquoi une valeur est manquante → utilisez `Result` avec des informations d'erreur
-- La performance est critique dans des boucles serrées → Option a un certain overhead
+-   L'absence de valeur constitue une erreur devant être signalée précisément → utilisez [`Result`](result.md).
+-   Vous avez besoin de savoir *pourquoi* la donnée est absente → utilisez [`Result`](result.md).
+-   La performance est critique au sein de boucles très serrées (Option induit un léger surcoût).
 
 ## Voir aussi
 
-- [`Result`](result.md) — Quand l'absence est une erreur avec des informations
-- [`from_nullable`](#constructeurs) — Pont du `None` de Python vers `Option`
-- [`traverse_option`](traverse.md) — Collecter plusieurs Options en une seule
+-   [`Result`](result.md) — Lorsque l'absence est un échec porteur d'information.
+-   [`traverse_option`](traverse.md) — Pour regrouper plusieurs `Option` en une seule.

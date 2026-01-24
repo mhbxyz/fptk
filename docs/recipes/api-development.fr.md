@@ -1,24 +1,24 @@
 # Développement d'API
 
-Ce guide montre comment utiliser les patterns fptk pour construire des API web robustes. Nous couvrirons les pipelines de traitement des requêtes, la gestion des erreurs, les opérations de base de données, les endpoints asynchrones et les middleware.
+Ce guide illustre comment utiliser les patrons de fptk pour concevoir des API web robustes. Nous aborderons les pipelines de traitement des requêtes, la gestion des erreurs, les interactions avec les bases de données, les points d'entrée (endpoints) asynchrones et l'usage de middlewares.
 
-## Pourquoi des patterns fonctionnels pour les API ?
+## Pourquoi adopter des patrons fonctionnels pour les API ?
 
-Le code d'API est particulièrement sujet à certains problèmes :
+Le code d'une API est souvent sujet à des problèmes récurrents :
 
-- **Gestion des erreurs en spaghetti** : des blocs try/except partout, des réponses d'erreur inconsistantes
-- **Échecs cachés** : des fonctions qui peuvent échouer mais ne le rendent pas évident
-- **Difficile à tester** : des handlers qui font trop de choses, fortement couplés aux frameworks
+-   **Une gestion d'erreurs confuse (spaghetti)** : des blocs `try/except` omniprésents et des réponses d'erreur disparates.
+-   **Des échecs silencieux** : des fonctions qui peuvent échouer sans que cela soit explicite.
+-   **Une difficulté de test** : des gestionnaires (handlers) surchargés et trop étroitement liés aux frameworks.
 
-Les patterns fonctionnels aident en :
+Les patrons fonctionnels apportent des solutions concrètes en :
 
-- Rendant la gestion des erreurs explicite et composable
-- Séparant les responsabilités en petites fonctions testables
-- Créant un flux de données cohérent à travers des pipelines
+-   Rendant la gestion des erreurs explicite et composable.
+-   Découpant les responsabilités en petites fonctions testables.
+-   Créant un flux de données cohérent grâce aux pipelines.
 
 ## Pipeline de traitement des requêtes
 
-Une requête API passe typiquement par plusieurs étapes : parse → validate → process → respond. C'est naturellement adapté à `pipe` :
+Le parcours d'une requête API suit généralement plusieurs étapes : analyse (parse) → validation → traitement → réponse. Ce flux se prête naturellement à l'usage de `pipe` :
 
 ```python
 from fptk.core.func import pipe, try_catch
@@ -27,7 +27,7 @@ from fptk.validate import validate_all
 import json
 
 def handle_user_creation(request_body: str):
-    """Complete pipeline for creating a user via API."""
+    """Pipeline complet de création d'utilisateur via API."""
     return pipe(
         request_body,
         parse_json,
@@ -38,18 +38,18 @@ def handle_user_creation(request_body: str):
     )
 
 def parse_json(body: str):
-    """Parse JSON, returning Result instead of raising."""
+    """Analyse le JSON et renvoie un Result au lieu de lever une exception."""
     return try_catch(json.loads)(body)
 
 def validate_request(data: dict):
-    """Validate with all errors accumulated."""
+    """Valide les données en accumulant toutes les erreurs détectées."""
     return validate_all([
-        lambda d: Ok(d) if d.get('name') else Err("Name required"),
-        lambda d: Ok(d) if '@' in d.get('email', '') else Err("Invalid email"),
+        lambda d: Ok(d) if d.get('name') else Err("Nom requis"),
+        lambda d: Ok(d) if '@' in d.get('email', '') else Err("Email invalide"),
     ], data)
 
 def create_user(data: dict):
-    """Create user in database."""
+    """Simule la création d'un utilisateur en base de données."""
     user_id = hash(data['email']) % 10000
     return Ok({
         'id': user_id,
@@ -58,20 +58,20 @@ def create_user(data: dict):
     })
 
 def send_welcome_email(user: dict):
-    """Send email (side effect at the edge)."""
-    # In real code: email_service.send(...)
+    """Envoie un e-mail (effet de bord géré à la périphérie)."""
+    # Dans un cas réel : email_service.send(...)
     return Ok(user)
 
 def format_response(user: dict):
-    """Format successful response."""
+    """Formate la réponse en cas de succès."""
     return {'status': 'success', 'data': {'user': user}}
 ```
 
-Chaque fonction fait une seule chose. Le pipeline rend le flux évident. Les erreurs se propagent automatiquement.
+Chaque fonction est dédiée à une tâche unique. Le pipeline rend le flux limpide et les erreurs se propagent d'elles-mêmes.
 
 ## Réponses d'erreur cohérentes
 
-Les API ont besoin d'un formatage d'erreur cohérent. Utilisez `map_err` pour transformer les erreurs en un format standard :
+La cohérence du formatage des erreurs est cruciale pour une API. Utilisez `map_err` pour normaliser vos erreurs :
 
 ```python
 from fptk.adt.result import Ok, Err
@@ -90,22 +90,22 @@ def handle_request(request):
 
 def authenticate(request):
     token = request.get('headers', {}).get('Authorization')
-    if not token:
-        return Err({'type': 'auth', 'message': 'Missing token'})
+    if not token :
+        return Err({'type': 'auth', 'message': 'Jeton manquant'})
     if token != 'valid-token':
-        return Err({'type': 'auth', 'message': 'Invalid token'})
+        return Err({'type': 'auth', 'message': 'Jeton invalide'})
     return Ok(request)
 
 def authorize(request):
     if request.get('method') == 'DELETE':
-        return Err({'type': 'forbidden', 'message': 'Admin required'})
+        return Err({'type': 'forbidden', 'message': 'Droits administrateur requis'})
     return Ok(request)
 
 def process(request):
-    return Ok({'result': 'processed'})
+    return Ok({'result': 'traité'})
 
 def format_error(error):
-    """Convert internal errors to API response format."""
+    """Convertit les erreurs internes au format de réponse de l'API."""
     status_codes = {
         'auth': 401,
         'forbidden': 403,
@@ -121,14 +121,14 @@ def format_error(error):
 
 ## Opérations de base de données
 
-Le code de base de données est l'endroit où `try_catch` et `Result` brillent vraiment :
+Le code d'interaction avec la base de données est le terrain de prédilection de `try_catch` et `Result` :
 
 ```python
 from fptk.core.func import pipe, try_catch
 from fptk.adt.result import Ok, Err
 
 def get_user_profile(user_id: int):
-    """Get user with posts, handling all possible failures."""
+    """Récupère un utilisateur et ses publications, en gérant tous les échecs possibles."""
     return pipe(
         user_id,
         validate_id,
@@ -139,15 +139,15 @@ def get_user_profile(user_id: int):
 
 def validate_id(user_id):
     if not isinstance(user_id, int) or user_id <= 0:
-        return Err({'type': 'validation', 'message': 'Invalid user ID'})
+        return Err({'type': 'validation', 'message': 'ID utilisateur invalide'})
     return Ok(user_id)
 
 def fetch_user(user_id: int):
-    """Wrap database call in Result."""
+    """Encapsule l'appel à la base de données dans un Result."""
     def query():
         user = db.users.get(user_id)
         if not user:
-            raise ValueError(f"User {user_id} not found")
+            raise ValueError(f"Utilisateur {user_id} introuvable")
         return user
 
     return try_catch(query)().map_err(
@@ -155,7 +155,7 @@ def fetch_user(user_id: int):
     )
 
 def fetch_posts(user):
-    """Fetch related data."""
+    """Récupère les données associées."""
     def query():
         return db.posts.filter(user_id=user['id'])
 
@@ -173,9 +173,9 @@ def combine_data(data):
     }
 ```
 
-## Endpoints asynchrones
+## Points d'entrée (endpoints) asynchrones
 
-Pour les opérations asynchrones, utilisez `gather_results` pour gérer plusieurs tâches concurrentes :
+Pour les opérations asynchrones, privilégiez `gather_results` afin de gérer plusieurs tâches concurrentes :
 
 ```python
 from fptk.core.func import async_pipe
@@ -183,7 +183,7 @@ from fptk.adt.result import Ok, Err
 from fptk.async_tools import gather_results
 
 async def handle_batch_creation(requests: list):
-    """Create multiple users concurrently."""
+    """Crée plusieurs utilisateurs de manière concurrente."""
     return await async_pipe(
         requests,
         validate_batch,
@@ -193,17 +193,17 @@ async def handle_batch_creation(requests: list):
 
 def validate_batch(requests):
     if not isinstance(requests, list):
-        return Err("Request must be a list")
+        return Err("La requête doit être une liste")
     if len(requests) > 100:
-        return Err("Maximum 100 items per batch")
+        return Err("Maximum 100 éléments par lot")
     return Ok(requests)
 
 async def create_user_async(data):
-    """Async user creation."""
+    """Création asynchrone d'un utilisateur."""
     if not data.get('email'):
-        return Err(f"Missing email: {data}")
+        return Err(f"Email manquant : {data}")
 
-    # Simulate async I/O
+    # Simule des E/S asynchrones
     await asyncio.sleep(0.01)
 
     return Ok({
@@ -215,19 +215,19 @@ def format_batch_response(users):
     return {'created': len(users), 'users': users}
 ```
 
-## Pattern middleware
+## Patron (pattern) Middleware
 
-Les middleware se composent naturellement avec des fonctions d'ordre supérieur :
+Les middlewares se composent tout naturellement à l'aide de fonctions d'ordre supérieur :
 
 ```python
 def with_auth(handler):
-    """Authentication middleware."""
+    """Middleware d'authentification."""
     def wrapper(request):
         return authenticate(request).bind(handler)
     return wrapper
 
 def with_logging(handler):
-    """Logging middleware (side effect)."""
+    """Middleware de journalisation (effet de bord)."""
     def wrapper(request):
         print(f"→ {request['method']} {request['path']}")
         result = handler(request)
@@ -236,7 +236,7 @@ def with_logging(handler):
     return wrapper
 
 def with_error_handling(handler):
-    """Ensure errors are formatted consistently."""
+    """Garantit une mise en forme cohérente des erreurs."""
     def wrapper(request):
         return handler(request).match(
             ok=lambda data: {'status': 'success', 'data': data},
@@ -244,7 +244,7 @@ def with_error_handling(handler):
         )
     return wrapper
 
-# Compose middleware (applied bottom-to-top)
+# Composition des middlewares (appliquée du bas vers le haut)
 @with_error_handling
 @with_logging
 @with_auth
@@ -255,9 +255,9 @@ def get_user(request):
 
 ## Points clés à retenir
 
-1. **Utilisez `pipe` pour le flux des requêtes** : Rend les étapes explicites et faciles à modifier
-2. **Utilisez `Result` pour toutes les opérations qui peuvent échouer** : Pas d'exceptions cachées
-3. **Utilisez `validate_all` pour la validation des entrées** : Affiche toutes les erreurs en une fois
-4. **Utilisez `try_catch` pour encapsuler les appels externes** : Base de données, API, E/S fichier
-5. **Gardez les effets de bord aux extrémités** : Logique pure au milieu, E/S aux frontières
-6. **Composez les middleware avec des fonctions d'ordre supérieur** : Séparation claire des responsabilités
+1.  **Utilisez `pipe` pour orchestrer le flux des requêtes** : cela rend les étapes explicites et facilite toute modification ultérieure.
+2.  **Adoptez `Result` pour toute opération susceptible d'échouer** : pour en finir avec les exceptions cachées.
+3.  **Privilégiez `validate_all` pour la validation des entrées** : afin d'afficher toutes les erreurs en une seule fois.
+4.  **Encapsulez les appels externes avec `try_catch`** : qu'il s'agisse de base de données, d'API ou d'E/S de fichiers.
+5.  **Maintenez les effets de bord à la périphérie** : gardez une logique pure au centre, et gérez les E/S aux frontières.
+6.  **Composez vos middlewares via des fonctions d'ordre supérieur** : pour une séparation nette des responsabilités.

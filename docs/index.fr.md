@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/fptk-logo.svg" alt="fptk — Functional Programming Toolkit" width="450">
+  <img src="../assets/fptk-logo.svg" alt="fptk — Functional Programming Toolkit" width="450">
 </p>
 
 <p align="center">

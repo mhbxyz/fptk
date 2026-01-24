@@ -1,6 +1,6 @@
-# Commencer
+# Démarrage rapide
 
-Ce guide présente les idées fondamentales de la programmation fonctionnelle à travers fptk. Nous nous concentrerons sur la compréhension du *pourquoi* ces patrons existent, pas seulement sur comment les utiliser.
+Ce guide vous initie aux concepts clés de la programmation fonctionnelle avec fptk. L'accent est mis sur le *pourquoi* de ces patrons, au-delà du simple *comment* les utiliser.
 
 ## Installation
 
@@ -10,7 +10,7 @@ pip install fptk
 
 ## Penser en transformations
 
-Le plus grand changement en programmation fonctionnelle est de penser au code comme des **transformations de données** plutôt que des **instructions à exécuter**.
+Le principal changement de perspective en programmation fonctionnelle consiste à envisager le code comme une suite de **transformations de données**, plutôt que comme une liste d'**instructions à exécuter**.
 
 Considérez ce code impératif :
 
@@ -31,15 +31,15 @@ def process_order(order):
     return result
 ```
 
-Ce code dit à l'ordinateur *quoi faire* étape par étape. Il est rempli de variables intermédiaires, de vérifications de None et de flux de contrôle implicite.
+Ce code dicte à l'ordinateur *quoi faire*, étape par étape. Il est truffé de variables intermédiaires, de vérifications de `None`, et de flux de contrôle implicites.
 
-Maintenant, pensez-y comme un pipeline de transformation :
+Maintenant, voyons-le comme un pipeline de transformation :
 
 ```
-order → validate → calculate_total → apply_tax → save → send_confirmation → result
+commande → validation → calcul_total → application_taxes → sauvegarde → envoi_confirmation → résultat
 ```
 
-Chaque étape transforme les données en une nouvelle forme. C'est ce que `pipe` exprime :
+Chaque étape transforme les données en une nouvelle forme. C'est exactement ce que `pipe` exprime :
 
 ```python
 from fptk.core.func import pipe
@@ -55,42 +55,42 @@ def process_order(order):
     )
 ```
 
-Le code se lit maintenant comme la transformation qu'il représente. Ajouter, supprimer ou réorganiser les étapes est trivial.
+Le code reflète désormais la transformation qu'il représente. Ajouter, supprimer ou réorganiser des étapes devient un jeu d'enfant.
 
-## Fonctions pures : le fondement
+## Les fonctions pures : les fondations
 
-Une **fonction pure** a deux propriétés :
+Une **fonction pure** possède deux propriétés :
 
-1. **Même entrée → même sortie** : `add(2, 3)` retourne toujours `5`
-2. **Pas d'effets de bord** : Elle ne modifie rien en dehors d'elle-même
+1.  **Même entrée → même sortie** : `add(2, 3)` renverra toujours `5`.
+2.  **Absence d'effets de bord** : Elle ne modifie rien en dehors de son propre périmètre.
 
-Pourquoi est-ce important ? Parce que les fonctions pures sont :
+Pourquoi est-ce si important ? Parce que les fonctions pures sont :
 
-- **Testables** : Pas besoin de mocks, juste affirmer que `f(input) == expected_output`
-- **Mémorisables** : Si `f(x)` retourne toujours la même chose, vous pouvez la mettre en cache
-- **Parallélisables** : Pas d'état partagé signifie pas de conditions de course
-- **Composables** : Vous pouvez les combiner librement sans surprises
+-   **Testables** : Nul besoin de mocks, il suffit de vérifier que `f(input) == expected_output`.
+-   **Mémorisables (cacheable)** : Si `f(x)` renvoie un résultat identique pour une même entrée, ce résultat peut être mis en cache.
+-   **Parallélisables** : L'absence d'état partagé élimine les conditions de course.
+-   **Composables** : Elles se combinent librement, sans effets inattendus.
 
-La plupart des bugs viennent de l'état mutable partagé. Les fonctions pures éliminent toute cette catégorie de bugs.
+La majorité des bugs provient d'états mutables partagés. Les fonctions pures éradiquent cette catégorie entière de problèmes.
 
 ```python
-# Impure: modifies external state
+# Impure : modifie un état externe
 total = 0
 def add_to_total(x):
     global total
-    total += x  # Side effect!
+    total += x  # Effet de bord !
     return total
 
-# Pure: no side effects
+# Pure : aucun effet de bord
 def add(a, b):
     return a + b
 ```
 
-fptk vous aide à écrire des fonctions pures en fournissant des outils pour gérer les choses qui nécessitent habituellement de l'impureté : erreurs, valeurs manquantes, état et effets.
+fptk vous aide à écrire du code pur en fournissant des outils pour gérer les aspects qui requièrent normalement de l'impureté, comme les erreurs, les valeurs absentes, l'état ou les effets de bord.
 
-## Option : rendre l'absence explicite
+## Option : rendre l'absence de valeur explicite
 
-Dans la plupart des langages, n'importe quelle valeur peut être `null` ou `None`. Cela mène à de la programmation défensive :
+Dans la plupart des langages, n'importe quelle valeur peut être `null` ou `None`, ce qui conduit à une programmation défensive :
 
 ```python
 if user is not None:
@@ -99,34 +99,34 @@ if user is not None:
             print(user.profile.name)
 ```
 
-Le problème n'est pas None en soi — c'est que None est *implicite*. N'importe quelle fonction peut retourner None, et le système de types ne vous avertit pas.
+Le problème ne vient pas de `None` en soi, mais du fait que sa présence est *implicite*. N'importe quelle fonction peut renvoyer `None` sans que le système de types ne vous en alerte.
 
-**Option** rend l'absence explicite. Une valeur est soit `Some(value)` soit `Nothing` :
+**Option** rend cette absence explicite. Une valeur est soit `Some(value)`, soit `Nothing` :
 
 ```python
 from fptk.adt.option import Some, NOTHING, from_nullable
 
-# Explicit: this might be absent
+# Explicite : cette valeur pourrait être absente
 maybe_name: Option[str] = from_nullable(get_name())
 
-# You must handle both cases
-name = maybe_name.unwrap_or("Anonymous")
+# Il faut donc gérer les deux cas
+name = maybe_name.unwrap_or("Anonyme")
 ```
 
-La puissance vient du **chaînage**. Au lieu de vérifications de None imbriquées :
+Toute sa puissance réside dans le **chaînage**. Au lieu de vérifications imbriquées pour `None` :
 
 ```python
-# Without Option
+# Sans Option
 if user and user.get("profile") and user.get("profile").get("email"):
     email = user["profile"]["email"].lower()
 else:
     email = None
 ```
 
-Vous composez des transformations qui gèrent automatiquement l'absence :
+Vous composez des transformations qui gèrent l'absence pour vous :
 
 ```python
-# With Option
+# Avec Option
 email = (
     from_nullable(user)
     .bind(lambda u: from_nullable(u.get("profile")))
@@ -135,31 +135,31 @@ email = (
 )
 ```
 
-Si une étape retourne `Nothing`, le reste de la chaîne est ignoré. Pas besoin de vérifications de None.
+Si une étape renvoie `Nothing`, le reste de la chaîne est simplement ignoré. Aucune vérification `None` n'est nécessaire.
 
-### Idée clé : map vs bind
+### Point clé : map vs bind
 
-- `map(f)` transforme la valeur à l'intérieur : `Some(5).map(lambda x: x * 2)` → `Some(10)`
-- `bind(f)` chaîne des calculs qui peuvent échouer : quand `f` elle-même retourne une Option
+-   `map(f)` transforme la valeur *contenue* dans l'Option : `Some(5).map(lambda x: x * 2)` → `Some(10)`.
+-   `bind(f)` enchaîne des opérations qui peuvent échouer, c'est-à-dire quand la fonction `f` renvoie elle-même une `Option`.
 
 ```python
-Some(5).map(lambda x: x * 2)           # Some(10) - f returns a value
-Some(5).bind(lambda x: Some(x * 2))    # Some(10) - f returns an Option
-Some(5).map(lambda x: Some(x * 2))     # Some(Some(10)) - wrong!
+Some(5).map(lambda x: x * 2)           # Some(10) - f renvoie une valeur
+Some(5).bind(lambda x: Some(x * 2))    # Some(10) - f renvoie une Option
+Some(5).map(lambda x: Some(x * 2))     # Some(Some(10)) - incorrect !
 ```
 
-## Result : les erreurs comme valeurs
+## Result : les erreurs comme des valeurs
 
-Les exceptions ont un problème : elles sont invisibles. En regardant la signature d'une fonction, vous ne pouvez pas dire si elle peut échouer :
+Le problème des exceptions, c'est qu'elles sont invisibles. En regardant la signature d'une fonction, impossible de dire si elle peut échouer :
 
 ```python
-def parse_config(path: str) -> dict:  # Might raise FileNotFoundError, JSONDecodeError, ...
+def parse_config(path: str) -> dict:  # Peut lever FileNotFoundError, JSONDecodeError...
     ...
 ```
 
-Vous enveloppez tout dans des try/except ou vous découvrez les erreurs à l'exécution.
+Vous finissez par envelopper votre code de blocs `try/except` ou par découvrir les erreurs au moment de l'exécution.
 
-**Result** rend les erreurs explicites. Un calcul réussit avec `Ok(value)` ou échoue avec `Err(error)` :
+**Result** rend les erreurs explicites. Une opération retourne soit `Ok(value)` en cas de succès, soit `Err(error)` en cas d'échec :
 
 ```python
 from fptk.adt.result import Ok, Err, Result
@@ -168,12 +168,12 @@ def parse_int(s: str) -> Result[int, str]:
     try:
         return Ok(int(s))
     except ValueError:
-        return Err(f"'{s}' is not a valid integer")
+        return Err(f"'{s}' n'est pas un entier valide")
 ```
 
-Le type de retour `Result[int, str]` vous dit : cela retourne un int, mais peut échouer avec une erreur de type string.
+Le type de retour `Result[int, str]` vous informe que la fonction renvoie un `int`, mais qu'elle peut échouer avec une erreur de type `str`.
 
-Comme Option, Result supporte le chaînage :
+Comme `Option`, `Result` supporte le chaînage :
 
 ```python
 def process_input(raw: str) -> Result[int, str]:
@@ -185,55 +185,55 @@ def process_input(raw: str) -> Result[int, str]:
     )
 ```
 
-Si une étape échoue, l'erreur se propage automatiquement. Pas d'imbrication de try/except.
+Si une étape échoue, l'erreur se propage automatiquement dans la chaîne. Fini les `try/except` imbriqués.
 
-### Programmation orientée railway
+### Programmation orientée chemin de fer (Railway Oriented Programming)
 
-Pensez à Result comme un chemin de fer avec deux voies :
+Imaginez `Result` comme une voie ferrée à deux pistes :
 
 ```
-         ┌─ Ok ──→ map ──→ bind ──→ Ok result
-Input ───┤
-         └─ Err ─────────────────→ Err result
+         ┌─ Ok ──→ map ──→ bind ──→ Résultat Ok
+Entrée ───┤
+         └─ Err ─────────────────→ Résultat Err
 ```
 
-Une fois sur la voie d'erreur, vous y restez. C'est ce qu'on appelle la "programmation orientée railway" et cela rend la gestion des erreurs composable.
+Une fois sur la piste d'erreur, on y reste. C'est ce qu'on nomme la 'programmation orientée chemin de fer' (Railway Oriented Programming), un principe qui rend la gestion d'erreurs composable.
 
 ## Validation : accumuler les erreurs
 
-La gestion d'erreurs normale est fail-fast : la première erreur arrête tout.
+Une gestion d'erreurs classique s'arrête à la première défaillance (fail-fast).
 
 ```python
 def validate(data):
     if not data.get("email"):
-        return Err("Email required")  # Stops here
+        return Err("Email requis")  # S'arrête ici
     if not data.get("name"):
-        return Err("Name required")   # Never reached
+        return Err("Nom requis")   # Jamais atteint
     ...
 ```
 
-Pour la validation destinée aux utilisateurs, vous voulez montrer *toutes* les erreurs en une fois. `validate_all` les accumule :
+Cependant, lors de la validation de données utilisateur, il est préférable d'afficher *toutes* les erreurs en une seule fois. `validate_all` se charge de les accumuler :
 
 ```python
 from fptk.validate import validate_all
 from fptk.adt.result import Ok, Err
 
 result = validate_all([
-    lambda d: Ok(d) if d.get("email") else Err("Email required"),
-    lambda d: Ok(d) if d.get("name") else Err("Name required"),
-    lambda d: Ok(d) if len(d.get("password", "")) >= 8 else Err("Password too short"),
+    lambda d: Ok(d) if d.get("email") else Err("Email requis"),
+    lambda d: Ok(d) if d.get("name") else Err("Nom requis"),
+    lambda d: Ok(d) if len(d.get("password", "")) >= 8 else Err("Mot de passe trop court"),
 ], data)
 
-# Err(NonEmptyList("Email required", "Name required", "Password too short"))
+# Err(NonEmptyList("Email requis", "Nom requis", "Mot de passe trop court"))
 ```
 
-C'est un exemple de style **applicatif**, où des calculs indépendants peuvent être combinés. C'est différent du style **monadique** (`bind`), où chaque étape dépend de la précédente.
+Il s'agit d'un exemple de style **applicatif**, où des calculs indépendants peuvent être combinés. Ce style se distingue du style **monadique** (`bind`), dans lequel chaque étape dépend du succès de la précédente.
 
 ## Composition : construire le complexe à partir du simple
 
-L'objectif de la programmation fonctionnelle est de construire un comportement complexe en composant des pièces simples.
+L'objectif de la programmation fonctionnelle est de construire des comportements complexes en assemblant des briques de base simples et robustes.
 
-**compose** combine des fonctions :
+**compose** assemble des fonctions :
 
 ```python
 from fptk.core.func import compose
@@ -243,7 +243,7 @@ inc_then_double = compose(lambda x: x * 2, lambda x: x + 1)
 inc_then_double(5)  # 12
 ```
 
-**curry** vous permet d'appliquer partiellement des fonctions :
+**curry** vous permet de spécialiser des fonctions en appliquant partiellement leurs arguments :
 
 ```python
 from fptk.core.func import curry
@@ -252,36 +252,36 @@ from fptk.core.func import curry
 def send_email(to, subject, body):
     ...
 
-# Create specialized functions
-send_alert = send_email("alerts@company.com")("ALERT")
-send_alert("Server is down!")
+# Créer des fonctions spécialisées
+send_alert = send_email("alerts@company.com")("ALERTE")
+send_alert("Le serveur est hors service !")
 ```
 
-Ces outils vous permettent de construire une application à partir de petites pièces réutilisables et testables.
+Ces outils vous permettent de construire votre application à partir de petites briques logicielles, réutilisables et testables.
 
 ## Quand utiliser fptk
 
-**Bon choix :**
+**Idéal pour :**
 
-- Pipelines de transformation de données
+- Pipelines de traitement de données
 - Validation et parsing
-- Gestion d'erreurs qui doit être explicite
-- Code qui doit être hautement testable
-- Équipes apprenant la programmation fonctionnelle
+- Gestion d'erreurs explicite et prévisible
+- Code exigeant une haute testabilité
+- Pour les équipes qui découvrent la programmation fonctionnelle
 
-**Commencez petit :**
+**Démarrez en douceur :**
 
-Vous n'avez pas besoin de réécrire votre base de code. Commencez par :
+Nul besoin de réécrire tout votre code. Commencez par :
 
-1. Utilisez `pipe` pour une fonction complexe
-2. Utilisez `Result` pour une opération sujette aux erreurs
-3. Utilisez `Option` pour une chaîne nullable
+1.  Essayez `pipe` sur une fonction complexe.
+2.  Utilisez `Result` pour une opération qui peut échouer.
+3.  Utilisez `Option` pour gérer une série d'accès pouvant retourner `None`.
 
-Chaque patron apporte une valeur immédiate par lui-même.
+Chacun de ces patrons apporte une valeur ajoutée immédiate et indépendante.
 
 ## Prochaines étapes
 
-- [Concepts fondamentaux](guide/core-concepts.md) — Guide détaillé de chaque patron
-- [Effets de bord](guide/side-effects.md) — Comment structurer les applications avec des cœurs purs
-- [Guide de migration](guide/migration.md) — Adoption étape par étape depuis le code impératif
-- [Référence](reference/index.md) — Documentation complète avec théorie et exemples
+-   [Concepts fondamentaux](guide/core-concepts.md) — Un guide détaillé pour chaque patron
+-   [Effets de bord](guide/side-effects.md) — Structurer une application autour d'un noyau pur
+-   [Guide de migration](guide/migration.md) — Adopter progressivement fptk dans un code impératif
+-   [Référence de l'API](reference/index.md) — Documentation complète avec les bases théoriques et des exemples
