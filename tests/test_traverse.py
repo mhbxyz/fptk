@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from fptk.adt.option import NOTHING, Some
-from fptk.adt.result import Err, Ok
+import asyncio
+
+from fptk.adt.option import NOTHING, Option, Some
+from fptk.adt.result import Err, Ok, Result
 from fptk.adt.traverse import (
     sequence_option,
     sequence_result,
     traverse_option,
+    traverse_option_async,
     traverse_result,
+    traverse_result_async,
 )
 
 ONE = 1
@@ -33,3 +37,63 @@ def test_traverse_option_and_result():
     assert traverse_result([ONE, TWO, THREE], lambda x: Err("bad") if x == TWO else Ok(x)) == Err(
         "bad"
     )
+
+
+def test_traverse_option_async_all_some():
+    async def async_double(x: int) -> Option[int]:
+        return Some(x * TWO)
+
+    async def run():
+        return await traverse_option_async([ONE, TWO, THREE], async_double)
+
+    assert asyncio.run(run()) == Some([TWO, FOUR, SIX])
+
+
+def test_traverse_option_async_with_nothing():
+    async def maybe_double(x: int) -> Option[int]:
+        return NOTHING if x == TWO else Some(x * TWO)
+
+    async def run():
+        return await traverse_option_async([ONE, TWO, THREE], maybe_double)
+
+    assert asyncio.run(run()) is NOTHING
+
+
+def test_traverse_option_async_empty():
+    async def async_double(x: int) -> Option[int]:
+        return Some(x * TWO)
+
+    async def run():
+        return await traverse_option_async([], async_double)
+
+    assert asyncio.run(run()) == Some([])
+
+
+def test_traverse_result_async_all_ok():
+    async def async_triple(x: int) -> Result[int, str]:
+        return Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_async([ONE, TWO, THREE], async_triple)
+
+    assert asyncio.run(run()) == Ok([THREE, SIX, NINE])
+
+
+def test_traverse_result_async_with_err():
+    async def maybe_triple(x: int) -> Result[int, str]:
+        return Err("bad") if x == TWO else Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_async([ONE, TWO, THREE], maybe_triple)
+
+    assert asyncio.run(run()) == Err("bad")
+
+
+def test_traverse_result_async_empty():
+    async def async_triple(x: int) -> Result[int, str]:
+        return Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_async([], async_triple)
+
+    assert asyncio.run(run()) == Ok([])
