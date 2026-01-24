@@ -68,10 +68,19 @@ One line, clear semantics, composable with other Option operations.
 
 ### Async Variants
 
-| Function | Signature | Description |
+| Function | Execution | Description |
 |----------|-----------|-------------|
-| `traverse_option_async(xs, f)` | `async (Iterable[A], A -> Awaitable[Option[B]]) -> Option[list[B]]` | Async map and collect |
-| `traverse_result_async(xs, f)` | `async (Iterable[A], A -> Awaitable[Result[B, E]]) -> Result[list[B], E]` | Async map and collect |
+| `traverse_option_async(xs, f)` | Sequential | Async map and collect, one at a time |
+| `traverse_result_async(xs, f)` | Sequential | Async map and collect, one at a time |
+| `traverse_option_parallel(xs, f)` | Parallel | Async map and collect, all at once |
+| `traverse_result_parallel(xs, f)` | Parallel | Async map and collect, all at once |
+
+**When to use which:**
+
+| Variant | Use when |
+|---------|----------|
+| `*_async` (sequential) | Rate-limited APIs, dependent operations, ordered side effects |
+| `*_parallel` | Independent operations, maximum throughput |
 
 ## How It Works
 
@@ -201,7 +210,7 @@ get_user_names(users)  # NOTHING (second has no name)
 ### Async Traversal
 
 ```python
-from fptk.adt.traverse import traverse_result_async
+from fptk.adt.traverse import traverse_result_async, traverse_result_parallel
 
 async def fetch_user_async(id: int) -> Result[User, str]:
     try:
@@ -210,11 +219,17 @@ async def fetch_user_async(id: int) -> Result[User, str]:
     except Exception as e:
         return Err(str(e))
 
-async def fetch_all_users(ids: list[int]) -> Result[list[User], str]:
+# Sequential - respects rate limits, executes one at a time
+async def fetch_users_sequential(ids: list[int]) -> Result[list[User], str]:
     return await traverse_result_async(ids, fetch_user_async)
 
-# Fetches sequentially (not in parallel)
-# For parallel, see gather_results in async_tools
+# Parallel - maximum throughput, all requests at once
+async def fetch_users_parallel(ids: list[int]) -> Result[list[User], str]:
+    return await traverse_result_parallel(ids, fetch_user_async)
+
+# 100 users, 100ms each:
+# - Sequential: ~10 seconds
+# - Parallel: ~100ms
 ```
 
 ### Chaining Traversals
@@ -282,10 +297,11 @@ validate_all([check_positive, check_even], -3)
 - You're validating user input
 - Showing all problems at once is better UX
 
-**Use gather_results when:**
+**Use `*_parallel` when:**
 
 - You need parallel async execution
 - Each task is independent
+- You want maximum throughput
 
 ## See Also
 

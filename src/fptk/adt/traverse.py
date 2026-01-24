@@ -44,6 +44,7 @@ Quick examples
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Iterable
 from typing import cast
 
@@ -57,6 +58,8 @@ __all__ = [
     "traverse_result",
     "traverse_option_async",
     "traverse_result_async",
+    "traverse_option_parallel",
+    "traverse_result_parallel",
 ]
 
 
@@ -139,4 +142,43 @@ async def traverse_result_async[A, B, E](
             return Err(rx.error)
         else:  # pragma: no cover - unreachable with current Result variants
             raise TypeError("Unexpected Result variant")
+    return Ok(out)
+
+
+async def traverse_option_parallel[A, B](
+    xs: Iterable[A], f: Callable[[A], Awaitable[Option[B]]]
+) -> Option[list[B]]:
+    """Map with f and sequence in parallel (fail on first NOTHING).
+
+    Unlike traverse_option_async which executes sequentially, this function
+    launches all operations concurrently using asyncio.gather.
+    """
+    results = await asyncio.gather(*[f(x) for x in xs])
+    out: list[B] = []
+    for r in results:
+        if isinstance(r, Some):
+            out.append(r.value)
+        else:
+            return cast(Option[list[B]], NOTHING)
+    return Some(out)
+
+
+async def traverse_result_parallel[A, B, E](
+    xs: Iterable[A], f: Callable[[A], Awaitable[Result[B, E]]]
+) -> Result[list[B], E]:
+    """Map with f and sequence in parallel (fail-fast).
+
+    Unlike traverse_result_async which executes sequentially, this function
+    launches all operations concurrently using asyncio.gather.
+    """
+    results = await asyncio.gather(*[f(x) for x in xs])
+    out: list[B] = []
+    first_err: E | None = None
+    for r in results:
+        if isinstance(r, Ok):
+            out.append(r.value)
+        elif isinstance(r, Err) and first_err is None:
+            first_err = r.error
+    if first_err is not None:
+        return Err(first_err)
     return Ok(out)

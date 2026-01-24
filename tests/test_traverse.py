@@ -9,8 +9,10 @@ from fptk.adt.traverse import (
     sequence_result,
     traverse_option,
     traverse_option_async,
+    traverse_option_parallel,
     traverse_result,
     traverse_result_async,
+    traverse_result_parallel,
 )
 
 ONE = 1
@@ -95,5 +97,68 @@ def test_traverse_result_async_empty():
 
     async def run():
         return await traverse_result_async([], async_triple)
+
+    assert asyncio.run(run()) == Ok([])
+
+
+# --- Parallel variants ---
+
+
+def test_traverse_option_parallel_all_some():
+    async def async_double(x: int) -> Option[int]:
+        return Some(x * TWO)
+
+    async def run():
+        return await traverse_option_parallel([ONE, TWO, THREE], async_double)
+
+    assert asyncio.run(run()) == Some([TWO, FOUR, SIX])
+
+
+def test_traverse_option_parallel_with_nothing():
+    async def maybe_double(x: int) -> Option[int]:
+        return NOTHING if x == TWO else Some(x * TWO)
+
+    async def run():
+        return await traverse_option_parallel([ONE, TWO, THREE], maybe_double)
+
+    assert asyncio.run(run()) is NOTHING
+
+
+def test_traverse_option_parallel_empty():
+    async def async_double(x: int) -> Option[int]:
+        return Some(x * TWO)
+
+    async def run():
+        return await traverse_option_parallel([], async_double)
+
+    assert asyncio.run(run()) == Some([])
+
+
+def test_traverse_result_parallel_all_ok():
+    async def async_triple(x: int) -> Result[int, str]:
+        return Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_parallel([ONE, TWO, THREE], async_triple)
+
+    assert asyncio.run(run()) == Ok([THREE, SIX, NINE])
+
+
+def test_traverse_result_parallel_with_err():
+    async def maybe_triple(x: int) -> Result[int, str]:
+        return Err("bad") if x == TWO else Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_parallel([ONE, TWO, THREE], maybe_triple)
+
+    assert asyncio.run(run()) == Err("bad")
+
+
+def test_traverse_result_parallel_empty():
+    async def async_triple(x: int) -> Result[int, str]:
+        return Ok(x * THREE)
+
+    async def run():
+        return await traverse_result_parallel([], async_triple)
 
     assert asyncio.run(run()) == Ok([])
