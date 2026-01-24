@@ -28,6 +28,7 @@ dev = [
     "hatchling>=1.27.0",
     "hypothesis>=6.138.2",
     "mkdocs-material>=9.5.0",
+    "mkdocs-static-i18n>=1.2.0",
     "mypy>=1.17.1",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",

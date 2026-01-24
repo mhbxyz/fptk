@@ -67,3 +67,31 @@ markdown_extensions:
 
 plugins:
   - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: fr
+          name: Français
+          build: true
+          nav_translations:
+            Home: Accueil
+            Getting Started: Démarrage
+            Guide: Guide
+            Core Concepts: Concepts de base
+            Side Effects: Effets de bord
+            Migration: Migration
+            Reference: Référence
+            Overview: Vue d'ensemble
+            Core Functions: Fonctions de base
+            Traverse: Traversée
+            Validation: Validation
+            Lazy Iterators: Itérateurs paresseux
+            Async Tools: Outils async
+            Recipes: Recettes
+            API Development: Développement API
+            Data Processing: Traitement de données
