@@ -92,6 +92,8 @@ failure = Err("something went wrong")
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine two Results into tuple |
 | `zip_with(other, f)` | `(Result[U, E], (T, U) -> R) -> Result[R, E]` | Combine two Results with function |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transform error value |
+| `recover(f)` | `(E -> T) -> Result[T, E]` | Convert `Err` to `Ok` using function |
+| `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convert `Err` to another `Result` |
 | `unwrap_or(default)` | `(U) -> T | U` | Get value or default |
 | `unwrap_or_else(f)` | `(E -> U) -> T | U` | Get value or compute from error |
 | `match(ok, err)` | `(T -> U, E -> U) -> U` | Pattern match both cases |
@@ -257,6 +259,40 @@ value = parse_int(input).unwrap_or(0)
 # Computed default (only runs on error)
 value = parse_int(input).unwrap_or_else(
     lambda err: log_and_return_default(err)
+)
+```
+
+### Recovering from Errors
+
+Use `recover` to convert an `Err` to `Ok` with a fallback value:
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Provide a default value on error
+Err("not found").recover(lambda e: "default")  # Ok("default")
+Ok(5).recover(lambda e: 0)  # Ok(5) - unchanged
+
+# Practical example: config with fallback
+def get_config(key: str) -> Result[str, str]:
+    return read_config_file(key).recover(lambda e: default_config[key])
+```
+
+Use `recover_with` for conditional recovery where some errors can be handled:
+
+```python
+from fptk.adt.result import Ok, Err
+
+def fetch_with_retry(url: str) -> Result[Response, str]:
+    return fetch(url).recover_with(lambda e:
+        fetch(url) if e == "timeout" else Err(e)  # Retry only timeouts
+    )
+
+# Chain multiple recovery strategies
+result = (
+    fetch_from_primary()
+    .recover_with(lambda e: fetch_from_secondary())  # Try backup
+    .recover(lambda e: cached_response)              # Last resort: cache
 )
 ```
 

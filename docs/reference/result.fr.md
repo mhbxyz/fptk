@@ -90,6 +90,8 @@ echec = Err("un problème est survenu")
 | `flatten()` | `Result[Result[T, E], E] -> Result[T, E]` | Déplie un `Result` imbriqué. |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine deux `Result` en un tuple de valeurs. |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transforme la valeur d'erreur. |
+| `recover(f)` | `(E -> T) -> Result[T, E]` | Convertit `Err` en `Ok` via une fonction. |
+| `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convertit `Err` en un autre `Result`. |
 | `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
 | `unwrap_or_else(f)` | `(E -> U) -> T | U` | Récupère la valeur ou la calcule depuis l'erreur. |
 | `match(ok, err)` | `(T -> U, E -> U) -> U` | Effectue un pattern matching sur les deux cas. |
@@ -187,6 +189,40 @@ valeur = analyser_entier(saisie).unwrap_or(0)
 # Repli calculé (ne s'exécute qu'en cas d'erreur)
 valeur = analyser_entier(saisie).unwrap_or_else(
     lambda err: loguer_et_renvoyer_defaut(err)
+)
+```
+
+### Récupération d'erreurs
+
+Utilisez `recover` pour convertir un `Err` en `Ok` avec une valeur de repli :
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Fournir une valeur par défaut en cas d'erreur
+Err("introuvable").recover(lambda e: "defaut")  # Ok("defaut")
+Ok(5).recover(lambda e: 0)  # Ok(5) - inchangé
+
+# Exemple pratique : configuration avec repli
+def obtenir_config(cle: str) -> Result[str, str]:
+    return lire_fichier_config(cle).recover(lambda e: config_defaut[cle])
+```
+
+Utilisez `recover_with` pour une récupération conditionnelle où certaines erreurs peuvent être gérées :
+
+```python
+from fptk.adt.result import Ok, Err
+
+def telecharger_avec_retry(url: str) -> Result[Response, str]:
+    return telecharger(url).recover_with(lambda e:
+        telecharger(url) if e == "timeout" else Err(e)  # Réessayer uniquement les timeouts
+    )
+
+# Enchaîner plusieurs stratégies de récupération
+resultat = (
+    telecharger_depuis_primaire()
+    .recover_with(lambda e: telecharger_depuis_secondaire())  # Essayer le backup
+    .recover(lambda e: reponse_en_cache)                      # Dernier recours : cache
 )
 ```
 

@@ -154,6 +154,45 @@ class Result[T, E]:
             return Err(f(self.error))
         return cast(Result[T, U], self)
 
+    def recover(self: Result[T, E], f: Callable[[E], T]) -> Result[T, E]:
+        """Convert ``Err`` to ``Ok`` by applying ``f`` to the error.
+
+        If this is ``Ok``, returns self unchanged. If this is ``Err(e)``,
+        returns ``Ok(f(e))``.
+
+        Example::
+
+            >>> Err("not found").recover(lambda e: "default")
+            Ok('default')
+            >>> Ok(5).recover(lambda e: 0)
+            Ok(5)
+        """
+        if isinstance(self, Err):
+            return Ok(f(self.error))
+        return self
+
+    def recover_with(self: Result[T, E], f: Callable[[E], Result[T, E]]) -> Result[T, E]:
+        """Convert ``Err`` to another ``Result`` by applying ``f`` to the error.
+
+        If this is ``Ok``, returns self unchanged. If this is ``Err(e)``,
+        returns ``f(e)`` which may be ``Ok`` or ``Err``.
+
+        Useful for conditional recovery where some errors can be handled
+        and others should propagate.
+
+        Example::
+
+            >>> Err("timeout").recover_with(lambda e: Ok("cached") if e == "timeout" else Err(e))
+            Ok('cached')
+            >>> Err("fatal").recover_with(lambda e: Ok("cached") if e == "timeout" else Err(e))
+            Err('fatal')
+            >>> Ok(5).recover_with(lambda e: Ok(0))
+            Ok(5)
+        """
+        if isinstance(self, Err):
+            return f(self.error)
+        return self
+
     def unwrap_or[U](self: Result[T, E], default: U) -> T | U:
         """Return inner value for Ok, else provided default."""
         return self.value if isinstance(self, Ok) else default

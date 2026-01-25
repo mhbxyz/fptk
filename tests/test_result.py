@@ -81,3 +81,36 @@ def test_result_flatten() -> None:
 
     # Err(e) -> Err(e)
     assert Err("outer").flatten() == Err("outer")
+
+
+def test_result_recover() -> None:
+    # Err -> Ok with recovery function
+    assert Err("not found").recover(lambda e: "default") == Ok("default")
+    assert Err("error").recover(lambda e: len(e)) == Ok(5)
+
+    # Ok passes through unchanged
+    assert Ok(5).recover(lambda e: 0) == Ok(5)
+    assert Ok("value").recover(lambda e: "fallback") == Ok("value")
+
+
+def test_result_recover_with() -> None:
+    # Err -> Ok (successful recovery)
+    assert Err("timeout").recover_with(lambda e: Ok("cached")) == Ok("cached")
+
+    # Err -> Err (recovery fails or chooses not to recover)
+    assert Err("fatal").recover_with(lambda e: Err(f"unrecoverable: {e}")) == Err(
+        "unrecoverable: fatal"
+    )
+
+    # Conditional recovery
+    def try_recover(e: str) -> Result[str, str]:
+        if e == "timeout":
+            return Ok("cached")
+        return Err(e)
+
+    assert Err("timeout").recover_with(try_recover) == Ok("cached")
+    assert Err("fatal").recover_with(try_recover) == Err("fatal")
+
+    # Ok passes through unchanged
+    assert Ok(5).recover_with(lambda e: Ok(0)) == Ok(5)
+    assert Ok("value").recover_with(lambda e: Err("ignored")) == Ok("value")
