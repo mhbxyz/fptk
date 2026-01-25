@@ -54,8 +54,16 @@ __all__ = [
     "tell",
     "listen",
     "censor",
+    "Monoid",
     "monoid_list",
     "monoid_str",
+    "monoid_sum",
+    "monoid_product",
+    "monoid_all",
+    "monoid_any",
+    "monoid_set",
+    "monoid_max",
+    "monoid_min",
 ]
 
 
@@ -70,6 +78,21 @@ class Monoid[W]:
 # Common monoids
 monoid_list: Monoid[list[object]] = Monoid(identity=[], combine=lambda a, b: a + b)
 monoid_str: Monoid[str] = Monoid(identity="", combine=lambda a, b: a + b)
+
+# Numeric monoids
+monoid_sum: Monoid[int | float] = Monoid(identity=0, combine=lambda a, b: a + b)
+monoid_product: Monoid[int | float] = Monoid(identity=1, combine=lambda a, b: a * b)
+
+# Boolean monoids
+monoid_all: Monoid[bool] = Monoid(identity=True, combine=lambda a, b: a and b)
+monoid_any: Monoid[bool] = Monoid(identity=False, combine=lambda a, b: a or b)
+
+# Collection monoids
+monoid_set: Monoid[frozenset[object]] = Monoid(identity=frozenset(), combine=lambda a, b: a | b)
+
+# Numeric extrema
+monoid_max: Monoid[float] = Monoid(identity=float("-inf"), combine=lambda a, b: max(a, b))
+monoid_min: Monoid[float] = Monoid(identity=float("inf"), combine=lambda a, b: min(a, b))
 
 
 @dataclass(frozen=True, slots=True)

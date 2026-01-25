@@ -152,10 +152,40 @@ w4 = censor(lambda logs: logs[-1:], w1)  # Uses w1's monoid
 
 ### Built-in Monoids
 
-| Monoid | Description |
-|--------|-------------|
-| `monoid_list` | List concatenation |
-| `monoid_str` | String concatenation |
+fptk provides predefined monoids for common use cases:
+
+| Monoid | Type | Identity | Description |
+|--------|------|----------|-------------|
+| `monoid_list` | `list[object]` | `[]` | List concatenation |
+| `monoid_str` | `str` | `""` | String concatenation |
+| `monoid_sum` | `int \| float` | `0` | Numeric addition |
+| `monoid_product` | `int \| float` | `1` | Numeric multiplication |
+| `monoid_all` | `bool` | `True` | Logical AND (conjunction) |
+| `monoid_any` | `bool` | `False` | Logical OR (disjunction) |
+| `monoid_set` | `frozenset[object]` | `frozenset()` | Set union |
+| `monoid_max` | `float` | `-inf` | Maximum value |
+| `monoid_min` | `float` | `+inf` | Minimum value |
+
+```python
+from fptk.adt.writer import (
+    monoid_list, monoid_str, monoid_sum, monoid_product,
+    monoid_all, monoid_any, monoid_set, monoid_max, monoid_min,
+)
+
+# Accumulate counts
+monoid_sum.combine(5, 3)  # 8
+
+# Track boolean conditions
+monoid_all.combine(True, False)  # False
+monoid_any.combine(True, False)  # True
+
+# Collect unique items
+monoid_set.combine(frozenset({1, 2}), frozenset({2, 3}))  # frozenset({1, 2, 3})
+
+# Track extremes
+monoid_max.combine(5.0, 10.0)  # 10.0
+monoid_min.combine(5.0, 10.0)  # 5.0
+```
 
 ## How It Works
 
@@ -367,16 +397,16 @@ summary, logs = computation_with_summary().run()
 # logs still contains all entries
 ```
 
-### Custom Monoids
+### Using Built-in Monoids
 
-You can create custom monoids for any type with an identity element and an associative combine operation.
+fptk provides predefined monoids for common patterns. Here are examples using each:
 
 #### Sum Monoid
 
 Track cumulative values like costs, counts, or sizes:
 
 ```python
-monoid_sum = Monoid(identity=0, combine=lambda a, b: a + b)
+from fptk.adt.writer import Writer, tell, monoid_sum
 
 def process_with_cost(data: list) -> Writer[int, list]:
     return tell(len(data), monoid_sum).map(lambda _: [x * 2 for x in data])
@@ -396,7 +426,7 @@ value, total_cost = result.run()
 Track peak values like maximum memory usage or highest latency:
 
 ```python
-monoid_max = Monoid(identity=float('-inf'), combine=max)
+from fptk.adt.writer import Writer, tell, monoid_max
 
 def track_max(value: float) -> Writer[float, float]:
     return tell(value, monoid_max).map(lambda _: value)
@@ -411,12 +441,32 @@ _, max_seen = result.run()
 # max_seen = 10.0
 ```
 
+#### Min Monoid
+
+Track minimum values like lowest latency or smallest size:
+
+```python
+from fptk.adt.writer import Writer, tell, monoid_min
+
+def track_min(value: float) -> Writer[float, float]:
+    return tell(value, monoid_min).map(lambda _: value)
+
+result = (
+    track_min(5.0)
+    .bind(lambda _: track_min(10.0))
+    .bind(lambda _: track_min(3.0))
+)
+
+_, min_seen = result.run()
+# min_seen = 3.0
+```
+
 #### Set Union Monoid
 
 Collect unique items like tags, categories, or visited nodes:
 
 ```python
-monoid_set = Monoid(identity=frozenset(), combine=lambda a, b: a | b)
+from fptk.adt.writer import Writer, tell, monoid_set
 
 def tag(labels: set[str]) -> Writer[frozenset[str], None]:
     return tell(frozenset(labels), monoid_set)
@@ -436,7 +486,7 @@ _, all_tags = result.run()
 Calculate combined probabilities or scaling factors:
 
 ```python
-monoid_product = Monoid(identity=1.0, combine=lambda a, b: a * b)
+from fptk.adt.writer import Writer, tell, monoid_product
 
 def scale(factor: float) -> Writer[float, float]:
     return tell(factor, monoid_product).map(lambda _: factor)
@@ -449,6 +499,65 @@ result = (
 
 _, combined_factor = result.run()
 # combined_factor = 0.684 (0.9 * 0.8 * 0.95)
+```
+
+#### Boolean Monoids
+
+Track conditions across computations:
+
+```python
+from fptk.adt.writer import Writer, tell, monoid_all, monoid_any
+
+# monoid_all: All conditions must be True
+def check_positive(x: int) -> Writer[bool, int]:
+    return tell(x > 0, monoid_all).map(lambda _: x)
+
+result = (
+    check_positive(5)
+    .bind(check_positive)
+    .bind(lambda x: check_positive(x - 10))  # -5, fails
+)
+
+value, all_positive = result.run()
+# all_positive = False (one check failed)
+
+# monoid_any: At least one condition must be True
+def check_even(x: int) -> Writer[bool, int]:
+    return tell(x % 2 == 0, monoid_any).map(lambda _: x + 1)
+
+result = (
+    check_even(1)   # odd
+    .bind(check_even)  # even!
+    .bind(check_even)  # odd
+)
+
+value, any_even = result.run()
+# any_even = True (one check passed)
+```
+
+### Custom Monoids
+
+You can also create custom monoids for domain-specific types:
+
+```python
+from dataclasses import dataclass
+from fptk.adt.writer import Monoid, Writer, tell
+
+@dataclass
+class Metrics:
+    db_queries: int = 0
+    cache_hits: int = 0
+
+    def __add__(self, other):
+        return Metrics(
+            self.db_queries + other.db_queries,
+            self.cache_hits + other.cache_hits
+        )
+
+monoid_metrics = Monoid(identity=Metrics(), combine=lambda a, b: a + b)
+
+def record_db_query() -> Writer[Metrics, None]:
+    return tell(Metrics(db_queries=1), monoid_metrics)
 ```
 
 ## When to Use Writer

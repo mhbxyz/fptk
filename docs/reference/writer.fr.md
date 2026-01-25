@@ -75,8 +75,49 @@ Monoïdes courants supportés par fptk :
 | `list` | `[]` | `+` (concaténation) | Liste de messages, métriques. |
 | `str` | `""` | `+` (concaténation) | Journal textuel continu. |
 | `int` (somme) | `0` | `+` (addition) | Compteurs, cumuls. |
+| `int` (produit) | `1` | `*` (multiplication) | Probabilités, facteurs. |
+| `bool` (all) | `True` | `and` | Vérification de conditions. |
+| `bool` (any) | `False` | `or` | Détection d'événements. |
+| `frozenset` | `frozenset()` | `\|` (union) | Collecte d'éléments uniques. |
+| `float` (max) | `-inf` | `max` | Valeur maximale rencontrée. |
+| `float` (min) | `+inf` | `min` | Valeur minimale rencontrée. |
 
-fptk fournit par défaut : `monoid_list` et `monoid_str`.
+### Monoïdes prédéfinis
+
+fptk fournit des monoïdes prêts à l'emploi :
+
+| Monoïde | Type | Identité | Description |
+| :--- | :--- | :--- | :--- |
+| `monoid_list` | `list[object]` | `[]` | Concaténation de listes |
+| `monoid_str` | `str` | `""` | Concaténation de chaînes |
+| `monoid_sum` | `int \| float` | `0` | Addition numérique |
+| `monoid_product` | `int \| float` | `1` | Multiplication numérique |
+| `monoid_all` | `bool` | `True` | ET logique (conjonction) |
+| `monoid_any` | `bool` | `False` | OU logique (disjonction) |
+| `monoid_set` | `frozenset[object]` | `frozenset()` | Union d'ensembles |
+| `monoid_max` | `float` | `-inf` | Valeur maximale |
+| `monoid_min` | `float` | `+inf` | Valeur minimale |
+
+```python
+from fptk.adt.writer import (
+    monoid_list, monoid_str, monoid_sum, monoid_product,
+    monoid_all, monoid_any, monoid_set, monoid_max, monoid_min,
+)
+
+# Accumuler des compteurs
+monoid_sum.combine(5, 3)  # 8
+
+# Suivre des conditions booléennes
+monoid_all.combine(True, False)  # False
+monoid_any.combine(True, False)  # True
+
+# Collecter des éléments uniques
+monoid_set.combine(frozenset({1, 2}), frozenset({2, 3}))  # frozenset({1, 2, 3})
+
+# Suivre les valeurs extrêmes
+monoid_max.combine(5.0, 10.0)  # 10.0
+monoid_min.combine(5.0, 10.0)  # 5.0
+```
 
 ## API
 
