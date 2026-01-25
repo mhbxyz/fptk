@@ -80,6 +80,7 @@ from_nullable(ma_valeur)  # Some(x) si x n'est pas None, sinon NOTHING
 | `filter(p)` | `(T -> bool) -> Option[T]` | Conserve `Some` uniquement si le prédicat est vrai. |
 | `flatten()` | `Option[Option[T]] -> Option[T]` | Déplie une `Option` imbriquée. |
 | `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine deux `Option` en un tuple de valeurs. |
+| `ap(other)` | `Option[T -> U].ap(Option[T]) -> Option[U]` | Applique une fonction enveloppée à une valeur enveloppée. |
 | `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
 | `or_else(alt)` | `(Option[T] \| () -> Option[T]) -> Option[T]` | Fournit une alternative si la valeur est absente. |
 | `to_result(err)` | `(E) -> Result[T, E]` | Convertit l'`Option` en `Result`. |
@@ -244,6 +245,32 @@ manager = obtenir_utilisateur(1).map(obtenir_manager).flatten()
 
 # Note : ceci est équivalent à utiliser bind directement
 manager = obtenir_utilisateur(1).bind(obtenir_manager)
+```
+
+### Application applicative
+
+Utilisez `ap` pour appliquer une fonction enveloppée à une valeur enveloppée :
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Usage de base
+Some(lambda x: x + 1).ap(Some(5))  # Some(6)
+Some(lambda x: x + 1).ap(NOTHING)  # NOTHING
+NOTHING.ap(Some(5))                # NOTHING
+
+# Fonctions curryfiées pour plusieurs arguments
+def additionner(a: int):
+    return lambda b: a + b
+
+Some(additionner).ap(Some(1)).ap(Some(2))  # Some(3)
+
+# Exemple pratique : combiner des valeurs optionnelles
+def creer_utilisateur(nom: str):
+    return lambda email: {"nom": nom, "email": email}
+
+utilisateur = Some(creer_utilisateur).ap(from_nullable(nom)).ap(from_nullable(email))
+# Some({"nom": ..., "email": ...}) si les deux sont présents, sinon NOTHING
 ```
 
 ## Quand utiliser Option ?

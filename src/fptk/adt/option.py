@@ -152,6 +152,31 @@ class Option[T]:
             return Some(f(self.value, other.value))
         return cast(Option[R], NOTHING)
 
+    def ap[U, R](self: Option[Callable[[U], R]], other: Option[U]) -> Option[R]:
+        """Apply a wrapped function to a wrapped value (applicative apply).
+
+        If both ``self`` and ``other`` are ``Some``, applies the function
+        inside ``self`` to the value inside ``other``. Otherwise returns ``NOTHING``.
+
+        Example::
+
+            >>> Some(lambda x: x + 1).ap(Some(5))
+            Some(6)
+            >>> Some(lambda x: x + 1).ap(NOTHING)
+            NOTHING
+            >>> NOTHING.ap(Some(5))
+            NOTHING
+
+        Useful for curried multi-argument functions::
+
+            >>> def add(a): return lambda b: a + b
+            >>> Some(add).ap(Some(1)).ap(Some(2))
+            Some(3)
+        """
+        if isinstance(self, Some) and isinstance(other, Some):
+            return Some(self.value(other.value))
+        return cast(Option[R], NOTHING)
+
     async def map_async[U](self: Option[T], f: Callable[[T], Awaitable[U]]) -> Option[U]:
         """Awaitably transform the value if present; otherwise ``NOTHING``.
 

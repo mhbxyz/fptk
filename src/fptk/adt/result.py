@@ -134,6 +134,34 @@ class Result[T, E]:
             return cast(Result[R, E], self)
         return cast(Result[R, E], other)
 
+    def ap[U, R](self: Result[Callable[[U], R], E], other: Result[U, E]) -> Result[R, E]:
+        """Apply a wrapped function to a wrapped value (applicative apply).
+
+        If both ``self`` and ``other`` are ``Ok``, applies the function
+        inside ``self`` to the value inside ``other``. Otherwise returns
+        the first ``Err`` encountered.
+
+        Example::
+
+            >>> Ok(lambda x: x + 1).ap(Ok(5))
+            Ok(6)
+            >>> Ok(lambda x: x + 1).ap(Err("no value"))
+            Err('no value')
+            >>> Err("no func").ap(Ok(5))
+            Err('no func')
+
+        Useful for curried multi-argument functions::
+
+            >>> def add(a): return lambda b: a + b
+            >>> Ok(add).ap(Ok(1)).ap(Ok(2))
+            Ok(3)
+        """
+        if isinstance(self, Ok) and isinstance(other, Ok):
+            return Ok(self.value(other.value))
+        if isinstance(self, Err):
+            return cast(Result[R, E], self)
+        return cast(Result[R, E], other)
+
     async def map_async[U](self: Result[T, E], f: Callable[[T], Awaitable[U]]) -> Result[U, E]:
         """Awaitably transform the success value; preserve errors."""
         if isinstance(self, Ok):

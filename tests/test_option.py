@@ -100,3 +100,25 @@ def test_option_flatten() -> None:
 
     # NOTHING -> NOTHING
     assert NOTHING.flatten() == NOTHING
+
+
+def test_option_ap() -> None:
+    # Success case: apply wrapped function to wrapped value
+    assert Some(lambda x: x + 1).ap(Some(5)) == Some(6)
+    assert Some(lambda s: s.upper()).ap(Some("hello")) == Some("HELLO")
+
+    # Failure propagation: NOTHING in either position
+    assert Some(lambda x: x + 1).ap(NOTHING) == NOTHING
+    assert NOTHING.ap(Some(5)) == NOTHING
+    assert NOTHING.ap(NOTHING) == NOTHING
+
+    # Curried multi-argument functions
+    def add(a: int):  # noqa: ANN202
+        return lambda b: a + b
+
+    assert Some(add).ap(Some(1)).ap(Some(2)) == Some(3)
+
+    def make_pair(a: int):  # noqa: ANN202
+        return lambda b: (a, b)
+
+    assert Some(make_pair).ap(Some(1)).ap(Some("x")) == Some((1, "x"))

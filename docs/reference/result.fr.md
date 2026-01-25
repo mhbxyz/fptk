@@ -89,6 +89,7 @@ echec = Err("un problème est survenu")
 | `bind(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Enchaîne une fonction retournant elle-même un `Result`. |
 | `flatten()` | `Result[Result[T, E], E] -> Result[T, E]` | Déplie un `Result` imbriqué. |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine deux `Result` en un tuple de valeurs. |
+| `ap(other)` | `Result[T -> U, E].ap(Result[T, E]) -> Result[U, E]` | Applique une fonction enveloppée à une valeur enveloppée. |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transforme la valeur d'erreur. |
 | `recover(f)` | `(E -> T) -> Result[T, E]` | Convertit `Err` en `Ok` via une fonction. |
 | `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convertit `Err` en un autre `Result`. |
@@ -250,6 +251,36 @@ permissions = recuperer_utilisateur(1).map(recuperer_permissions).flatten()
 
 # Note : ceci est équivalent à utiliser bind directement
 permissions = recuperer_utilisateur(1).bind(recuperer_permissions)
+```
+
+### Application applicative
+
+Utilisez `ap` pour appliquer une fonction enveloppée à une valeur enveloppée :
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Usage de base
+Ok(lambda x: x + 1).ap(Ok(5))        # Ok(6)
+Ok(lambda x: x + 1).ap(Err("oups"))  # Err("oups")
+Err("pas de func").ap(Ok(5))         # Err("pas de func")
+
+# Fonctions curryfiées pour plusieurs arguments
+def additionner(a: int):
+    return lambda b: a + b
+
+Ok(additionner).ap(Ok(1)).ap(Ok(2))  # Ok(3)
+
+# L'erreur à n'importe quelle étape se propage (première erreur gagne)
+Ok(additionner).ap(Err("e1")).ap(Ok(2))   # Err("e1")
+Ok(additionner).ap(Ok(1)).ap(Err("e2"))   # Err("e2")
+
+# Exemple pratique : combiner des entrées validées
+def creer_utilisateur(nom: str):
+    return lambda email: {"nom": nom, "email": email}
+
+utilisateur = Ok(creer_utilisateur).ap(valider_nom(nom)).ap(valider_email(email))
+# Ok({...}) si les deux sont valides, sinon première Err
 ```
 
 ## Quand utiliser Result ?

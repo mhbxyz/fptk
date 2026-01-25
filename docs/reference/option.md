@@ -81,6 +81,7 @@ from_nullable(some_value)  # Some(x) if x is not None, else NOTHING
 | `flatten()` | `Option[Option[T]] -> Option[T]` | Unwrap nested Option |
 | `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine two Options into tuple |
 | `zip_with(other, f)` | `(Option[U], (T, U) -> R) -> Option[R]` | Combine two Options with function |
+| `ap(other)` | `Option[T -> U].ap(Option[T]) -> Option[U]` | Apply wrapped function to wrapped value |
 | `unwrap_or(default)` | `(U) -> T | U` | Get value or default |
 | `or_else(alt)` | `(Option[T] | () -> Option[T]) -> Option[T]` | Alternative if absent |
 | `to_result(err)` | `(E) -> Result[T, E]` | Convert to Result |
@@ -271,6 +272,32 @@ manager = get_user(1).map(get_manager).flatten()
 
 # Note: this is equivalent to using bind directly
 manager = get_user(1).bind(get_manager)
+```
+
+### Applicative Apply
+
+Use `ap` to apply a wrapped function to a wrapped value:
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Basic usage
+Some(lambda x: x + 1).ap(Some(5))  # Some(6)
+Some(lambda x: x + 1).ap(NOTHING)  # NOTHING
+NOTHING.ap(Some(5))                # NOTHING
+
+# Curried functions for multiple arguments
+def add(a: int):
+    return lambda b: a + b
+
+Some(add).ap(Some(1)).ap(Some(2))  # Some(3)
+
+# Practical example: combining optional values
+def create_user(name: str):
+    return lambda email: {"name": name, "email": email}
+
+user = Some(create_user).ap(from_nullable(name)).ap(from_nullable(email))
+# Some({"name": ..., "email": ...}) if both present, else NOTHING
 ```
 
 ### First-Available Value

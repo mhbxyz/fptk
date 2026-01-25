@@ -114,3 +114,24 @@ def test_result_recover_with() -> None:
     # Ok passes through unchanged
     assert Ok(5).recover_with(lambda e: Ok(0)) == Ok(5)
     assert Ok("value").recover_with(lambda e: Err("ignored")) == Ok("value")
+
+
+def test_result_ap() -> None:
+    # Success case: apply wrapped function to wrapped value
+    assert Ok(lambda x: x + 1).ap(Ok(5)) == Ok(6)
+    assert Ok(lambda s: s.upper()).ap(Ok("hello")) == Ok("HELLO")
+
+    # Failure propagation: first Err wins
+    assert Ok(lambda x: x + 1).ap(Err("no value")) == Err("no value")
+    assert Err("no func").ap(Ok(5)) == Err("no func")
+    assert Err("first").ap(Err("second")) == Err("first")
+
+    # Curried multi-argument functions
+    def add(a: int):  # noqa: ANN202
+        return lambda b: a + b
+
+    assert Ok(add).ap(Ok(1)).ap(Ok(2)) == Ok(3)
+
+    # Error at any step propagates
+    assert Ok(add).ap(Err("e1")).ap(Ok(2)) == Err("e1")
+    assert Ok(add).ap(Ok(1)).ap(Err("e2")) == Err("e2")

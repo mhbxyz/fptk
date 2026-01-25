@@ -91,6 +91,7 @@ failure = Err("something went wrong")
 | `flatten()` | `Result[Result[T, E], E] -> Result[T, E]` | Unwrap nested Result |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine two Results into tuple |
 | `zip_with(other, f)` | `(Result[U, E], (T, U) -> R) -> Result[R, E]` | Combine two Results with function |
+| `ap(other)` | `Result[T -> U, E].ap(Result[T, E]) -> Result[U, E]` | Apply wrapped function to wrapped value |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transform error value |
 | `recover(f)` | `(E -> T) -> Result[T, E]` | Convert `Err` to `Ok` using function |
 | `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convert `Err` to another `Result` |
@@ -336,6 +337,36 @@ permissions = fetch_user(1).map(fetch_permissions).flatten()
 
 # Note: this is equivalent to using bind directly
 permissions = fetch_user(1).bind(fetch_permissions)
+```
+
+### Applicative Apply
+
+Use `ap` to apply a wrapped function to a wrapped value:
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Basic usage
+Ok(lambda x: x + 1).ap(Ok(5))        # Ok(6)
+Ok(lambda x: x + 1).ap(Err("oops"))  # Err("oops")
+Err("no func").ap(Ok(5))             # Err("no func")
+
+# Curried functions for multiple arguments
+def add(a: int):
+    return lambda b: a + b
+
+Ok(add).ap(Ok(1)).ap(Ok(2))  # Ok(3)
+
+# Error at any step propagates (first error wins)
+Ok(add).ap(Err("e1")).ap(Ok(2))   # Err("e1")
+Ok(add).ap(Ok(1)).ap(Err("e2"))   # Err("e2")
+
+# Practical example: combining validated inputs
+def create_user(name: str):
+    return lambda email: {"name": name, "email": email}
+
+user = Ok(create_user).ap(validate_name(name)).ap(validate_email(email))
+# Ok({...}) if both valid, else first Err
 ```
 
 ## When to Use Result
