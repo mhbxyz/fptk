@@ -20,6 +20,11 @@ Errors as values
 - ``try_catch(fn)`` converts exceptions into ``Result`` values (``Ok``/``Err``),
   which pairs well with ``Result`` combinators and traverse helpers.
 
+Folding and reducing
+- ``foldl(f, init, xs)`` left fold: reduces from left with an accumulator.
+- ``foldr(f, init, xs)`` right fold: reduces from right with an accumulator.
+- ``reduce(f, xs)`` reduces without initial value, returns ``Option``.
+
 Small utilities
 - ``identity(x)`` returns the input unchanged (handy default function).
 - ``const(x)`` ignores all arguments and returns ``x`` (useful in callbacks).
@@ -58,9 +63,10 @@ Quick examples
 from __future__ import annotations
 
 import inspect
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any
 
+from fptk.adt.option import NOTHING, Option, Some
 from fptk.adt.result import Err, Ok, Result
 
 __all__ = [
@@ -75,6 +81,9 @@ __all__ = [
     "const",
     "once",
     "try_catch",
+    "foldl",
+    "foldr",
+    "reduce",
 ]
 
 
@@ -203,3 +212,55 @@ def try_catch[T, **P](fn: Callable[P, T]) -> Callable[P, Result[T, Exception]]:
             return Err(e)
 
     return wrapper
+
+
+def foldl[A, B](f: Callable[[B, A], B], init: B, xs: Iterable[A]) -> B:
+    """Left fold: f(f(f(init, x1), x2), x3).
+
+    Reduces a collection from the left, threading an accumulator through each step.
+
+    Example:
+        foldl(lambda acc, x: acc + x, 0, [1, 2, 3])  # 6
+        foldl(lambda acc, x: acc - x, 10, [1, 2, 3])  # 4 (10-1-2-3)
+    """
+    acc = init
+    for x in xs:
+        acc = f(acc, x)
+    return acc
+
+
+def foldr[A, B](f: Callable[[A, B], B], init: B, xs: Iterable[A]) -> B:
+    """Right fold: f(x1, f(x2, f(x3, init))).
+
+    Reduces a collection from the right. Note: converts iterable to list internally.
+
+    Example:
+        foldr(lambda x, acc: f"{x}-{acc}", "end", ["a", "b", "c"])  # "a-b-c-end"
+        foldr(lambda x, acc: acc - x, 10, [1, 2, 3])  # 4 (10-3-2-1)
+    """
+    items = list(xs)
+    acc = init
+    for x in reversed(items):
+        acc = f(x, acc)
+    return acc
+
+
+def reduce[A](f: Callable[[A, A], A], xs: Iterable[A]) -> Option[A]:
+    """Reduce without initial value, returns Option.
+
+    Uses the first element as the initial accumulator. Returns NOTHING for empty
+    collections, Some(result) otherwise.
+
+    Example:
+        reduce(max, [])  # NOTHING
+        reduce(max, [1, 5, 3])  # Some(5)
+        reduce(lambda a, b: a + b, [1, 2, 3])  # Some(6)
+    """
+    it = iter(xs)
+    try:
+        acc = next(it)
+    except StopIteration:
+        return NOTHING  # type: ignore[return-value]
+    for x in it:
+        acc = f(acc, x)
+    return Some(acc)

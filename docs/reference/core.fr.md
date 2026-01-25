@@ -322,3 +322,135 @@ async def async_pipe(x, *funcs):
 ```
 
 Elle vérifie si le résultat de chaque étape est « awaitable » et, si c'est le cas, l'attend (`await`) avant de passer à la fonction suivante.
+
+---
+
+## `foldl`
+
+Repli à gauche (left fold) : réduit une collection de gauche à droite avec un accumulateur.
+
+```python
+from fptk.core.func import foldl
+
+def foldl(f, init, xs):
+    """Repli à gauche : f(f(f(init, x1), x2), x3)"""
+```
+
+### Pourquoi utiliser `foldl` ?
+
+`foldl` est l'opération fondamentale pour réduire des collections. De nombreuses opérations courantes (somme, produit, max, min) sont des replis :
+
+```python
+# La somme est un repli
+foldl(lambda acc, x: acc + x, 0, [1, 2, 3])  # 6
+
+# Le produit est un repli
+foldl(lambda acc, x: acc * x, 1, [1, 2, 3])  # 6
+```
+
+### Exemples
+
+```python
+from fptk.core.func import foldl
+
+# Somme
+foldl(lambda acc, x: acc + x, 0, [1, 2, 3])  # 6
+
+# Soustraction (associative à gauche) : ((10-1)-2)-3 = 4
+foldl(lambda acc, x: acc - x, 10, [1, 2, 3])  # 4
+
+# Construction de chaîne de gauche à droite
+foldl(lambda acc, x: f"{acc}-{x}", "debut", ["a", "b", "c"])
+# "debut-a-b-c"
+
+# Aplatir des listes imbriquées
+foldl(lambda acc, x: acc + x, [], [[1, 2], [3], [4, 5]])
+# [1, 2, 3, 4, 5]
+```
+
+---
+
+## `foldr`
+
+Repli à droite (right fold) : réduit une collection de droite à gauche avec un accumulateur.
+
+```python
+from fptk.core.func import foldr
+
+def foldr(f, init, xs):
+    """Repli à droite : f(x1, f(x2, f(x3, init)))"""
+```
+
+### Pourquoi utiliser `foldr` ?
+
+Certaines opérations sont naturellement associatives à droite. `foldr` préserve cette structure :
+
+```python
+# Construction d'une liste chaînée (de droite à gauche)
+foldr(lambda x, acc: (x, acc), None, [1, 2, 3])
+# (1, (2, (3, None)))
+```
+
+### Exemples
+
+```python
+from fptk.core.func import foldr
+
+# Construction de chaîne de droite à gauche
+foldr(lambda x, acc: f"{x}-{acc}", "fin", ["a", "b", "c"])
+# "a-b-c-fin"
+
+# Construction de structure imbriquée
+foldr(lambda x, acc: {"valeur": x, "suivant": acc}, None, [1, 2, 3])
+# {"valeur": 1, "suivant": {"valeur": 2, "suivant": {"valeur": 3, "suivant": None}}}
+```
+
+---
+
+## `reduce`
+
+Réduction sans valeur initiale, retournant un `Option`.
+
+```python
+from fptk.core.func import reduce
+
+def reduce(f, xs):
+    """Réduit sans init, retourne Option."""
+```
+
+### Pourquoi utiliser `reduce` ?
+
+Parfois la valeur initiale devrait provenir de la collection elle-même. Le `functools.reduce` de Python lève une exception sur les collections vides. Le `reduce` de fptk retourne un `Option` pour plus de sécurité :
+
+```python
+from fptk.core.func import reduce
+
+reduce(max, [1, 5, 3])  # Some(5)
+reduce(max, [])          # NOTHING (pas d'exception !)
+```
+
+### Exemples
+
+```python
+from fptk.core.func import reduce
+from fptk.adt.option import NOTHING
+
+# Trouver le maximum
+reduce(max, [1, 5, 3])  # Some(5)
+
+# Somme
+reduce(lambda a, b: a + b, [1, 2, 3])  # Some(6)
+
+# Collection vide
+reduce(max, [])  # NOTHING
+
+# Un seul élément
+reduce(max, [42])  # Some(42)
+
+# Extraction sécurisée
+resultat = reduce(max, scores_utilisateurs)
+if resultat.is_some():
+    print(f"Score le plus élevé : {resultat.unwrap()}")
+else:
+    print("Aucun score enregistré")
+```

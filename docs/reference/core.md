@@ -621,3 +621,181 @@ await async_pipe(
     send_notification # async
 )
 ```
+
+---
+
+## `foldl`
+
+Left fold: reduce a collection from the left with an accumulator.
+
+```python
+from fptk.core.func import foldl
+
+def foldl(f, init, xs):
+    """Left fold: f(f(f(init, x1), x2), x3)"""
+```
+
+### Why `foldl`?
+
+`foldl` is the fundamental operation for reducing collections. Many common operations (sum, product, max, min) are folds:
+
+```python
+# Sum is a fold
+foldl(lambda acc, x: acc + x, 0, [1, 2, 3])  # 6
+
+# Product is a fold
+foldl(lambda acc, x: acc * x, 1, [1, 2, 3])  # 6
+```
+
+### How It Works
+
+```python
+def foldl(f, init, xs):
+    acc = init
+    for x in xs:
+        acc = f(acc, x)
+    return acc
+```
+
+Left fold processes elements left-to-right: `f(f(f(init, x1), x2), x3)`.
+
+### Examples
+
+```python
+from fptk.core.func import foldl
+
+# Sum
+foldl(lambda acc, x: acc + x, 0, [1, 2, 3])  # 6
+
+# Subtraction (left-associative): ((10-1)-2)-3 = 4
+foldl(lambda acc, x: acc - x, 10, [1, 2, 3])  # 4
+
+# Build string left-to-right
+foldl(lambda acc, x: f"{acc}-{x}", "start", ["a", "b", "c"])
+# "start-a-b-c"
+
+# Flatten nested lists
+foldl(lambda acc, x: acc + x, [], [[1, 2], [3], [4, 5]])
+# [1, 2, 3, 4, 5]
+```
+
+---
+
+## `foldr`
+
+Right fold: reduce a collection from the right with an accumulator.
+
+```python
+from fptk.core.func import foldr
+
+def foldr(f, init, xs):
+    """Right fold: f(x1, f(x2, f(x3, init)))"""
+```
+
+### Why `foldr`?
+
+Some operations are naturally right-associative. `foldr` preserves this structure:
+
+```python
+# Build a linked list (right-to-left)
+foldr(lambda x, acc: (x, acc), None, [1, 2, 3])
+# (1, (2, (3, None)))
+```
+
+### How It Works
+
+```python
+def foldr(f, init, xs):
+    items = list(xs)
+    acc = init
+    for x in reversed(items):
+        acc = f(x, acc)
+    return acc
+```
+
+Right fold processes elements right-to-left: `f(x1, f(x2, f(x3, init)))`. Note that the accumulator is the second argument to `f`.
+
+### Examples
+
+```python
+from fptk.core.func import foldr
+
+# Build string right-to-left
+foldr(lambda x, acc: f"{x}-{acc}", "end", ["a", "b", "c"])
+# "a-b-c-end"
+
+# Subtraction with right fold
+# f(1, f(2, f(3, 10))) where f = lambda x, acc: acc - x
+# = f(1, f(2, 7)) = f(1, 5) = 4
+foldr(lambda x, acc: acc - x, 10, [1, 2, 3])  # 4
+
+# Build nested structure
+foldr(lambda x, acc: {"value": x, "next": acc}, None, [1, 2, 3])
+# {"value": 1, "next": {"value": 2, "next": {"value": 3, "next": None}}}
+```
+
+---
+
+## `reduce`
+
+Reduce without initial value, returning `Option`.
+
+```python
+from fptk.core.func import reduce
+
+def reduce(f, xs):
+    """Reduce without init, returns Option."""
+```
+
+### Why `reduce`?
+
+Sometimes the initial value should come from the collection itself. Python's built-in `functools.reduce` raises on empty collections. fptk's `reduce` returns `Option` for safety:
+
+```python
+from fptk.core.func import reduce
+
+reduce(max, [1, 5, 3])  # Some(5)
+reduce(max, [])          # NOTHING (no exception!)
+```
+
+### How It Works
+
+```python
+def reduce(f, xs):
+    it = iter(xs)
+    try:
+        acc = next(it)
+    except StopIteration:
+        return NOTHING
+    for x in it:
+        acc = f(acc, x)
+    return Some(acc)
+```
+
+Uses the first element as the initial accumulator. Returns `NOTHING` for empty collections, `Some(result)` otherwise.
+
+### Examples
+
+```python
+from fptk.core.func import reduce
+from fptk.adt.option import NOTHING
+
+# Find maximum
+reduce(max, [1, 5, 3])  # Some(5)
+
+# Sum
+reduce(lambda a, b: a + b, [1, 2, 3])  # Some(6)
+
+# Empty collection
+reduce(max, [])  # NOTHING
+
+# Single element
+reduce(max, [42])  # Some(42)
+
+# Safe extraction
+result = reduce(max, user_scores)
+if result.is_some():
+    print(f"Highest score: {result.unwrap()}")
+else:
+    print("No scores recorded")
+```
