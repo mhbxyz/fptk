@@ -77,6 +77,8 @@ from_nullable(some_value)  # Some(x) if x is not None, else NOTHING
 | `map(f)` | `(T -> U) -> Option[U]` | Transform the value if present |
 | `bind(f)` | `(T -> Option[U]) -> Option[U]` | Chain Option-returning functions |
 | `and_then(f)` | `(T -> Option[U]) -> Option[U]` | Alias for `bind` (Rust naming) |
+| `filter(p)` | `(T -> bool) -> Option[T]` | Keep `Some` only if predicate holds |
+| `flatten()` | `Option[Option[T]] -> Option[T]` | Unwrap nested Option |
 | `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine two Options into tuple |
 | `zip_with(other, f)` | `(Option[U], (T, U) -> R) -> Option[R]` | Combine two Options with function |
 | `unwrap_or(default)` | `(U) -> T | U` | Get value or default |
@@ -221,6 +223,54 @@ def parse_positive(s: str) -> Option[int]:
 parse_positive("42")   # Some(42)
 parse_positive("-1")   # NOTHING
 parse_positive("abc")  # NOTHING
+```
+
+### Filtering Values
+
+Use `filter` to keep a `Some` only if it satisfies a predicate:
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Keep only positive numbers
+Some(5).filter(lambda x: x > 0)   # Some(5)
+Some(-3).filter(lambda x: x > 0)  # NOTHING
+NOTHING.filter(lambda x: x > 0)   # NOTHING
+
+# Practical example: validate user input
+def get_valid_age(input: str) -> Option[int]:
+    return parse_int(input).filter(lambda age: 0 <= age <= 150)
+
+get_valid_age("25")   # Some(25)
+get_valid_age("-5")   # NOTHING (invalid age)
+get_valid_age("200")  # NOTHING (invalid age)
+get_valid_age("abc")  # NOTHING (parse failed)
+```
+
+### Flattening Nested Options
+
+Use `flatten` when you have an `Option[Option[T]]` and want `Option[T]`:
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Direct usage
+Some(Some(42)).flatten()  # Some(42)
+Some(NOTHING).flatten()   # NOTHING
+NOTHING.flatten()         # NOTHING
+
+# Common scenario: map with a function that returns Option
+def get_user(id: int) -> Option[User]: ...
+def get_manager(user: User) -> Option[User]: ...
+
+# Without flatten: Option[Option[User]]
+nested = get_user(1).map(get_manager)
+
+# With flatten: Option[User]
+manager = get_user(1).map(get_manager).flatten()
+
+# Note: this is equivalent to using bind directly
+manager = get_user(1).bind(get_manager)
 ```
 
 ### First-Available Value

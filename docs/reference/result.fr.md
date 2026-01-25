@@ -87,6 +87,7 @@ echec = Err("un problème est survenu")
 | `is_err()` | `() -> bool` | Renvoie `True` s'il s'agit d'un `Err`. |
 | `map(f)` | `(T -> U) -> Result[U, E]` | Transforme la valeur de succès. |
 | `bind(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Enchaîne une fonction retournant elle-même un `Result`. |
+| `flatten()` | `Result[Result[T, E], E] -> Result[T, E]` | Déplie un `Result` imbriqué. |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine deux `Result` en un tuple de valeurs. |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transforme la valeur d'erreur. |
 | `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
@@ -187,6 +188,32 @@ valeur = analyser_entier(saisie).unwrap_or(0)
 valeur = analyser_entier(saisie).unwrap_or_else(
     lambda err: loguer_et_renvoyer_defaut(err)
 )
+```
+
+### Aplatissement de Results imbriqués
+
+Utilisez `flatten` lorsque vous avez un `Result[Result[T, E], E]` et souhaitez obtenir un `Result[T, E]` :
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Usage direct
+Ok(Ok(42)).flatten()       # Ok(42)
+Ok(Err("interne")).flatten() # Err("interne")
+Err("externe").flatten()     # Err("externe")
+
+# Scénario courant : map avec une fonction qui retourne Result
+def recuperer_utilisateur(id: int) -> Result[User, str]: ...
+def recuperer_permissions(user: User) -> Result[Permissions, str]: ...
+
+# Sans flatten : Result[Result[Permissions, str], str]
+imbrique = recuperer_utilisateur(1).map(recuperer_permissions)
+
+# Avec flatten : Result[Permissions, str]
+permissions = recuperer_utilisateur(1).map(recuperer_permissions).flatten()
+
+# Note : ceci est équivalent à utiliser bind directement
+permissions = recuperer_utilisateur(1).bind(recuperer_permissions)
 ```
 
 ## Quand utiliser Result ?

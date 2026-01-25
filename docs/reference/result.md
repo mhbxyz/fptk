@@ -88,6 +88,7 @@ failure = Err("something went wrong")
 | `map(f)` | `(T -> U) -> Result[U, E]` | Transform success value |
 | `bind(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Chain Result-returning functions |
 | `and_then(f)` | `(T -> Result[U, E]) -> Result[U, E]` | Alias for `bind` (Rust naming) |
+| `flatten()` | `Result[Result[T, E], E] -> Result[T, E]` | Unwrap nested Result |
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine two Results into tuple |
 | `zip_with(other, f)` | `(Result[U, E], (T, U) -> R) -> Result[R, E]` | Combine two Results with function |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transform error value |
@@ -273,6 +274,32 @@ def get_user_email(user_id: int) -> Result[str, str]:
             .to_result("User has no email")
         )
     )
+```
+
+### Flattening Nested Results
+
+Use `flatten` when you have a `Result[Result[T, E], E]` and want `Result[T, E]`:
+
+```python
+from fptk.adt.result import Ok, Err
+
+# Direct usage
+Ok(Ok(42)).flatten()       # Ok(42)
+Ok(Err("inner")).flatten() # Err("inner")
+Err("outer").flatten()     # Err("outer")
+
+# Common scenario: map with a function that returns Result
+def fetch_user(id: int) -> Result[User, str]: ...
+def fetch_permissions(user: User) -> Result[Permissions, str]: ...
+
+# Without flatten: Result[Result[Permissions, str], str]
+nested = fetch_user(1).map(fetch_permissions)
+
+# With flatten: Result[Permissions, str]
+permissions = fetch_user(1).map(fetch_permissions).flatten()
+
+# Note: this is equivalent to using bind directly
+permissions = fetch_user(1).bind(fetch_permissions)
 ```
 
 ## When to Use Result

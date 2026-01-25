@@ -77,6 +77,8 @@ from_nullable(ma_valeur)  # Some(x) si x n'est pas None, sinon NOTHING
 | `is_none()` | `() -> bool` | Renvoie `True` s'il s'agit d'un `Nothing`. |
 | `map(f)` | `(T -> U) -> Option[U]` | Applique `f` à la valeur si elle est présente. |
 | `bind(f)` | `(T -> Option[U]) -> Option[U]` | Enchaîne une fonction retournant elle-même une `Option`. |
+| `filter(p)` | `(T -> bool) -> Option[T]` | Conserve `Some` uniquement si le prédicat est vrai. |
+| `flatten()` | `Option[Option[T]] -> Option[T]` | Déplie une `Option` imbriquée. |
 | `zip(other)` | `(Option[U]) -> Option[tuple[T, U]]` | Combine deux `Option` en un tuple de valeurs. |
 | `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
 | `or_else(alt)` | `(Option[T] \| () -> Option[T]) -> Option[T]` | Fournit une alternative si la valeur est absente. |
@@ -194,6 +196,54 @@ def chercher_utilisateur(id: int) -> Option[User]:
 # Conversion pour une gestion d'erreurs plus détaillée
 resultat = chercher_utilisateur(42).to_result(f"Utilisateur {id} introuvable")
 # Ok(user) ou Err("Utilisateur 42 introuvable")
+```
+
+### Filtrage de valeurs
+
+Utilisez `filter` pour conserver un `Some` uniquement s'il satisfait un prédicat :
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Conserver uniquement les nombres positifs
+Some(5).filter(lambda x: x > 0)   # Some(5)
+Some(-3).filter(lambda x: x > 0)  # NOTHING
+NOTHING.filter(lambda x: x > 0)   # NOTHING
+
+# Exemple pratique : valider une saisie utilisateur
+def obtenir_age_valide(saisie: str) -> Option[int]:
+    return parser_entier(saisie).filter(lambda age: 0 <= age <= 150)
+
+obtenir_age_valide("25")   # Some(25)
+obtenir_age_valide("-5")   # NOTHING (âge invalide)
+obtenir_age_valide("200")  # NOTHING (âge invalide)
+obtenir_age_valide("abc")  # NOTHING (échec du parsing)
+```
+
+### Aplatissement d'Options imbriquées
+
+Utilisez `flatten` lorsque vous avez une `Option[Option[T]]` et souhaitez obtenir une `Option[T]` :
+
+```python
+from fptk.adt.option import Some, NOTHING
+
+# Usage direct
+Some(Some(42)).flatten()  # Some(42)
+Some(NOTHING).flatten()   # NOTHING
+NOTHING.flatten()         # NOTHING
+
+# Scénario courant : map avec une fonction qui retourne Option
+def obtenir_utilisateur(id: int) -> Option[User]: ...
+def obtenir_manager(user: User) -> Option[User]: ...
+
+# Sans flatten : Option[Option[User]]
+imbrique = obtenir_utilisateur(1).map(obtenir_manager)
+
+# Avec flatten : Option[User]
+manager = obtenir_utilisateur(1).map(obtenir_manager).flatten()
+
+# Note : ceci est équivalent à utiliser bind directement
+manager = obtenir_utilisateur(1).bind(obtenir_manager)
 ```
 
 ## Quand utiliser Option ?
