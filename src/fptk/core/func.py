@@ -87,7 +87,7 @@ def compose[T, U, V](f: Callable[[U], V], g: Callable[[T], U]) -> Callable[[T], 
     return h
 
 
-def pipe[T](x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
+def pipe[T](x: object, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
     """Thread a value through a sequence of unary functions.
 
     Example: pipe(2, lambda x: x + 1, lambda x: x * 3) -> 9
@@ -97,7 +97,7 @@ def pipe[T](x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
     return x
 
 
-async def async_pipe[T](x: T, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
+async def async_pipe[T](x: object, *funcs: Callable[[Any], Any]) -> Any:  # noqa: ANN401
     """Thread a value through a sequence of possibly-async unary functions.
 
     Each function may be synchronous or return an awaitable. The value is awaited

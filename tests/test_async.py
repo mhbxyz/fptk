@@ -48,9 +48,9 @@ def test_option_map_bind_async():
 
     async def run():
         assert await option.Some(2).map_async(_ainc) == option.Some(3)
-        assert await option.NOTHING.map_async(_ainc) is option.NOTHING
+        assert await option.NOTHING.map_async(_ainc) is option.NOTHING  # pyright: ignore[reportArgumentType]
         assert await option.Some(2).bind_async(some_plus_one) == option.Some(3)
-        assert await option.NOTHING.bind_async(some_plus_one) is option.NOTHING
+        assert await option.NOTHING.bind_async(some_plus_one) is option.NOTHING  # pyright: ignore[reportArgumentType]
 
     asyncio.run(run())
 

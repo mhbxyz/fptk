@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import cast
 
 from fptk.adt.option import NOTHING, Option, Some
 from fptk.adt.result import Err, Ok, Result
@@ -25,7 +26,7 @@ NINE = 9
 
 def test_sequence_option_and_result():
     assert sequence_option([Some(ONE), Some(TWO)]) == Some([ONE, TWO])
-    assert sequence_option([Some(ONE), NOTHING]) is NOTHING
+    assert sequence_option([Some(ONE), NOTHING]) is NOTHING  # pyright: ignore[reportArgumentType]
 
     assert sequence_result([Ok(ONE), Ok(TWO)]) == Ok([ONE, TWO])
     assert sequence_result([Ok(ONE), Err("e")]) == Err("e")
@@ -33,7 +34,7 @@ def test_sequence_option_and_result():
 
 def test_traverse_option_and_result():
     assert traverse_option([ONE, TWO, THREE], lambda x: Some(x * TWO)) == Some([TWO, FOUR, SIX])
-    assert traverse_option([ONE, TWO, THREE], lambda x: NOTHING if x == TWO else Some(x)) is NOTHING
+    assert traverse_option([ONE, TWO, THREE], lambda x: NOTHING if x == TWO else Some(x)) is NOTHING  # pyright: ignore[reportArgumentType]
 
     assert traverse_result([ONE, TWO, THREE], lambda x: Ok(x * THREE)) == Ok([THREE, SIX, NINE])
     assert traverse_result([ONE, TWO, THREE], lambda x: Err("bad") if x == TWO else Ok(x)) == Err(
@@ -53,7 +54,7 @@ def test_traverse_option_async_all_some():
 
 def test_traverse_option_async_with_nothing():
     async def maybe_double(x: int) -> Option[int]:
-        return NOTHING if x == TWO else Some(x * TWO)
+        return cast(Option[int], NOTHING) if x == TWO else Some(x * TWO)
 
     async def run():
         return await traverse_option_async([ONE, TWO, THREE], maybe_double)
@@ -116,7 +117,7 @@ def test_traverse_option_parallel_all_some():
 
 def test_traverse_option_parallel_with_nothing():
     async def maybe_double(x: int) -> Option[int]:
-        return NOTHING if x == TWO else Some(x * TWO)
+        return cast(Option[int], NOTHING) if x == TWO else Some(x * TWO)
 
     async def run():
         return await traverse_option_parallel([ONE, TWO, THREE], maybe_double)

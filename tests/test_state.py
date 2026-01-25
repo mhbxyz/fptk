@@ -30,7 +30,7 @@ def test_get_put_modify() -> None:
 
 def test_gets() -> None:
     # gets extracts and transforms without changing state
-    s = gets(lambda x: x + 10)
+    s = gets(lambda x: x + 10)  # pyright: ignore[reportOperatorIssue]
     assert s.run(5) == (15, 5)
 
 

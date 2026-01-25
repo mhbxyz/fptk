@@ -93,7 +93,7 @@ class Result[T, E]:
         """Alias for ``bind()``. Named after Rust's Result::and_then."""
         return self.bind(f)
 
-    def flatten[U](self: Result[Result[U, E], E]) -> Result[U, E]:
+    def flatten(self: Result[T, E]) -> T:
         """Flatten nested ``Result[Result[U, E], E]`` into ``Result[U, E]``.
 
         Equivalent to ``bind(identity)`` but more readable when you have
@@ -108,7 +108,9 @@ class Result[T, E]:
             >>> Err("outer").flatten()
             Err('outer')
         """
-        return self.bind(lambda x: x)
+        if isinstance(self, Ok):
+            return cast(T, self.value)
+        return cast(T, self)
 
     def zip[U](self: Result[T, E], other: Result[U, E]) -> Result[tuple[T, U], E]:
         """Combine two Results into a Result of tuple.
@@ -134,7 +136,7 @@ class Result[T, E]:
             return cast(Result[R, E], self)
         return cast(Result[R, E], other)
 
-    def ap[U, R](self: Result[Callable[[U], R], E], other: Result[U, E]) -> Result[R, E]:
+    def ap[U, R](self: Result[T, E], other: Result[U, E]) -> Result[R, E]:
         """Apply a wrapped function to a wrapped value (applicative apply).
 
         If both ``self`` and ``other`` are ``Ok``, applies the function
@@ -156,8 +158,8 @@ class Result[T, E]:
             >>> Ok(add).ap(Ok(1)).ap(Ok(2))
             Ok(3)
         """
-        if isinstance(self, Ok) and isinstance(other, Ok):
-            return Ok(self.value(other.value))
+        if isinstance(self, Ok) and isinstance(other, Ok) and callable(self.value):
+            return cast(Result[R, E], Ok(self.value(other.value)))
         if isinstance(self, Err):
             return cast(Result[R, E], self)
         return cast(Result[R, E], other)

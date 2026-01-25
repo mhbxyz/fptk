@@ -7,6 +7,7 @@ from fptk.adt.result import Err, Ok
 
 TEN = 10
 ZERO = 0
+THREE = 3
 
 
 def test_option_map_bind() -> None:
@@ -65,26 +66,26 @@ def test_option_zip_with() -> None:
     assert Some(2).zip_with(Some(3), lambda a, b: a + b) == Some(5)
     assert Some("hello").zip_with(Some(" world"), lambda a, b: a + b) == Some("hello world")
 
-    # Any NOTHING -> NOTHING
-    assert NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING
-    assert Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING
+    # Any NOTHING -> NOTHING (lambda never called, but typed as if it could be)
+    assert NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING  # pyright: ignore[reportOperatorIssue]
+    assert Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING  # pyright: ignore[reportOperatorIssue]
 
 
 def test_option_and_then_alias() -> None:
     # and_then is alias for bind
     assert Some(5).and_then(lambda x: Some(x + 1)) == Some(6)
-    assert NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING
+    assert NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING  # pyright: ignore[reportOperatorIssue]
 
 
 def test_option_filter() -> None:
     # Some with passing predicate -> same Some
-    assert Some(5).filter(lambda x: x > 3) == Some(5)
+    assert Some(5).filter(lambda x: x > THREE) == Some(5)
 
     # Some with failing predicate -> NOTHING
-    assert Some(2).filter(lambda x: x > 3) == NOTHING
+    assert Some(2).filter(lambda x: x > THREE) == NOTHING
 
     # NOTHING -> NOTHING regardless of predicate
-    assert NOTHING.filter(lambda x: x > 3) == NOTHING
+    assert NOTHING.filter(lambda x: x > THREE) == NOTHING  # pyright: ignore[reportOperatorIssue]
 
     # Edge case: predicate returns False for falsy value
     assert Some(0).filter(lambda x: x > 0) == NOTHING

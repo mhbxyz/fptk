@@ -117,7 +117,7 @@ class Option[T]:
             return self
         return cast(Option[T], NOTHING)
 
-    def flatten[U](self: Option[Option[U]]) -> Option[U]:
+    def flatten(self: Option[T]) -> T:
         """Flatten nested ``Option[Option[U]]`` into ``Option[U]``.
 
         Equivalent to ``bind(identity)`` but more readable when you have
@@ -132,7 +132,9 @@ class Option[T]:
             >>> NOTHING.flatten()
             NOTHING
         """
-        return self.bind(lambda x: x)
+        if isinstance(self, Some):
+            return cast(T, self.value)
+        return cast(T, NOTHING)
 
     def zip[U](self: Option[T], other: Option[U]) -> Option[tuple[T, U]]:
         """Combine two Options into an Option of tuple.
@@ -152,7 +154,7 @@ class Option[T]:
             return Some(f(self.value, other.value))
         return cast(Option[R], NOTHING)
 
-    def ap[U, R](self: Option[Callable[[U], R]], other: Option[U]) -> Option[R]:
+    def ap[U, R](self: Option[T], other: Option[U]) -> Option[R]:
         """Apply a wrapped function to a wrapped value (applicative apply).
 
         If both ``self`` and ``other`` are ``Some``, applies the function
@@ -173,8 +175,8 @@ class Option[T]:
             >>> Some(add).ap(Some(1)).ap(Some(2))
             Some(3)
         """
-        if isinstance(self, Some) and isinstance(other, Some):
-            return Some(self.value(other.value))
+        if isinstance(self, Some) and isinstance(other, Some) and callable(self.value):
+            return cast(Option[R], Some(self.value(other.value)))
         return cast(Option[R], NOTHING)
 
     async def map_async[U](self: Option[T], f: Callable[[T], Awaitable[U]]) -> Option[U]:
@@ -209,17 +211,18 @@ class Option[T]:
         if isinstance(self, Some):
             yield self.value
 
-    def or_else(self: Option[T], alt: Option[T] | Callable[[], Option[T]]) -> Option[T]:
+    def or_else[U](self: Option[T], alt: Option[U] | Callable[[], Option[U]]) -> Option[T | U]:
         """Return self if Some; otherwise the alternative Option (value or thunk)."""
         if isinstance(self, Some):
-            return self
-        return alt() if callable(alt) else alt
+            return cast(Option[T | U], self)
+        return cast(Option[T | U], alt() if callable(alt) else alt)
 
     def to_result[E](self: Option[T], err: E | Callable[[], E]) -> Result[T, E]:
         """Convert Option[T] to Result[T, E] (Some -> Ok; NOTHING -> Err(err))."""
         if isinstance(self, Some):
             return Ok(self.value)
-        return Err(err()) if callable(err) else Err(err)
+        error_value: E = err() if callable(err) else err  # pyright: ignore[reportAssignmentType]
+        return Err(error_value)
 
     def match[U](self: Option[T], some: Callable[[T], U], none: Callable[[], U]) -> U:
         """Pattern-match helper."""

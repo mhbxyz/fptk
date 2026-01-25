@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -42,11 +44,11 @@ def _of(x: int) -> Option[int]:
 
 
 def _f(x: int) -> Option[int]:
-    return Some(x + 1) if (x % 3) != 0 else NOTHING
+    return Some(x + 1) if (x % 3) != 0 else cast(Option[int], NOTHING)
 
 
 def _g(x: int) -> Option[int]:
-    return Some(x * 2) if (x % 5) != 0 else NOTHING
+    return Some(x * 2) if (x % 5) != 0 else cast(Option[int], NOTHING)
 
 
 @given(st.integers())
@@ -112,7 +114,10 @@ def test_result_monad_left_identity(x: int) -> None:
 
 @given(results())
 def test_result_monad_right_identity(m: Result[int, str]) -> None:
-    assert m.bind(of) == m if isinstance(m, Err) else of(m.value)
+    if isinstance(m, Ok):
+        assert m.bind(of) == of(m.value)
+    else:
+        assert m.bind(of) == m
 
 
 @given(results())
@@ -176,7 +181,7 @@ def test_result_traverse_homomorphism(res_list: list[Result[int, str]]) -> None:
     for res in res_list:
         if isinstance(res, Ok):
             values.append(res.value)
-        elif first_err is None:
+        elif first_err is None and isinstance(res, Err):
             first_err = res.error
 
     if first_err is not None:
@@ -323,12 +328,12 @@ def writer_of(x: int) -> Writer[list[str], int]:
 
 def writer_f(x: int) -> Writer[list[str], int]:
     """Kleisli arrow: increment and log."""
-    return Writer(x + 1, [f"f({x})"], monoid_list)
+    return Writer(x + 1, [f"f({x})"], monoid_list)  # pyright: ignore[reportArgumentType]
 
 
 def writer_g(x: int) -> Writer[list[str], int]:
     """Kleisli arrow: double and log."""
-    return Writer(x * 2, [f"g({x})"], monoid_list)
+    return Writer(x * 2, [f"g({x})"], monoid_list)  # pyright: ignore[reportArgumentType]
 
 
 @given(st.integers())
@@ -363,7 +368,7 @@ def test_writer_monad_left_identity(x: int) -> None:
 @given(st.integers())
 def test_writer_monad_right_identity(value: int) -> None:
     """Right identity: m >>= return == m"""
-    m = Writer(value, ["initial"], monoid_list)
+    m = Writer(value, ["initial"], monoid_list)  # pyright: ignore[reportArgumentType]
     assert m.bind(writer_of).run() == m.run()
 
 
