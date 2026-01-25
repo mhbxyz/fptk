@@ -4,6 +4,7 @@ This module provides immutable, composable data structures for handling
 optional values, results, collections, and now monadic computations.
 """
 
+from fptk.adt.either import Either, Left, Right
 from fptk.adt.nelist import NonEmptyList
 from fptk.adt.option import NOTHING, Option, Some, from_nullable
 from fptk.adt.reader import Reader, ask, local
@@ -12,6 +13,9 @@ from fptk.adt.state import State, get, gets, modify, put
 from fptk.adt.writer import Writer, censor, listen, monoid_list, monoid_str, tell
 
 __all__ = [
+    "Either",
+    "Left",
+    "Right",
     "Option",
     "Some",
     "NOTHING",
