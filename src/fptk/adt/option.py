@@ -98,6 +98,25 @@ class Option[T]:
         """Alias for ``bind()``. Named after Rust's Option::and_then."""
         return self.bind(f)
 
+    def filter(self: Option[T], predicate: Callable[[T], bool]) -> Option[T]:
+        """Keep ``Some`` only if the predicate returns ``True``; otherwise ``NOTHING``.
+
+        Returns ``self`` unchanged if it is ``Some`` and the predicate holds;
+        otherwise returns ``NOTHING``.
+
+        Example::
+
+            >>> Some(5).filter(lambda x: x > 3)
+            Some(5)
+            >>> Some(2).filter(lambda x: x > 3)
+            NOTHING
+            >>> NOTHING.filter(lambda x: x > 3)
+            NOTHING
+        """
+        if isinstance(self, Some) and predicate(self.value):
+            return self
+        return cast(Option[T], NOTHING)
+
     def zip[U](self: Option[T], other: Option[U]) -> Option[tuple[T, U]]:
         """Combine two Options into an Option of tuple.
 

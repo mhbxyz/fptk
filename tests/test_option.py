@@ -74,3 +74,18 @@ def test_option_and_then_alias() -> None:
     # and_then is alias for bind
     assert Some(5).and_then(lambda x: Some(x + 1)) == Some(6)
     assert NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING
+
+
+def test_option_filter() -> None:
+    # Some with passing predicate -> same Some
+    assert Some(5).filter(lambda x: x > 3) == Some(5)
+
+    # Some with failing predicate -> NOTHING
+    assert Some(2).filter(lambda x: x > 3) == NOTHING
+
+    # NOTHING -> NOTHING regardless of predicate
+    assert NOTHING.filter(lambda x: x > 3) == NOTHING
+
+    # Edge case: predicate returns False for falsy value
+    assert Some(0).filter(lambda x: x > 0) == NOTHING
+    assert Some(0).filter(lambda x: x == 0) == Some(0)
