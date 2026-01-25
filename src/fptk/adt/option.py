@@ -117,6 +117,23 @@ class Option[T]:
             return self
         return cast(Option[T], NOTHING)
 
+    def flatten[U](self: Option[Option[U]]) -> Option[U]:
+        """Flatten nested ``Option[Option[U]]`` into ``Option[U]``.
+
+        Equivalent to ``bind(identity)`` but more readable when you have
+        a nested Option from mapping a function that returns Option.
+
+        Example::
+
+            >>> Some(Some(5)).flatten()
+            Some(5)
+            >>> Some(NOTHING).flatten()
+            NOTHING
+            >>> NOTHING.flatten()
+            NOTHING
+        """
+        return self.bind(lambda x: x)
+
     def zip[U](self: Option[T], other: Option[U]) -> Option[tuple[T, U]]:
         """Combine two Options into an Option of tuple.
 

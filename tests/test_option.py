@@ -89,3 +89,14 @@ def test_option_filter() -> None:
     # Edge case: predicate returns False for falsy value
     assert Some(0).filter(lambda x: x > 0) == NOTHING
     assert Some(0).filter(lambda x: x == 0) == Some(0)
+
+
+def test_option_flatten() -> None:
+    # Some(Some(x)) -> Some(x)
+    assert Some(Some(5)).flatten() == Some(5)
+
+    # Some(NOTHING) -> NOTHING
+    assert Some(NOTHING).flatten() == NOTHING
+
+    # NOTHING -> NOTHING
+    assert NOTHING.flatten() == NOTHING

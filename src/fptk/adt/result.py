@@ -93,6 +93,23 @@ class Result[T, E]:
         """Alias for ``bind()``. Named after Rust's Result::and_then."""
         return self.bind(f)
 
+    def flatten[U](self: Result[Result[U, E], E]) -> Result[U, E]:
+        """Flatten nested ``Result[Result[U, E], E]`` into ``Result[U, E]``.
+
+        Equivalent to ``bind(identity)`` but more readable when you have
+        a nested Result from mapping a function that returns Result.
+
+        Example::
+
+            >>> Ok(Ok(5)).flatten()
+            Ok(5)
+            >>> Ok(Err("inner")).flatten()
+            Err('inner')
+            >>> Err("outer").flatten()
+            Err('outer')
+        """
+        return self.bind(lambda x: x)
+
     def zip[U](self: Result[T, E], other: Result[U, E]) -> Result[tuple[T, U], E]:
         """Combine two Results into a Result of tuple.
 

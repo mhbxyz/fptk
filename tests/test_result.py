@@ -70,3 +70,14 @@ def test_result_and_then_alias() -> None:
     # and_then is alias for bind
     assert Ok(5).and_then(lambda x: Ok(x + 1)) == Ok(6)
     assert Err("e").and_then(lambda x: Ok(x + 1)) == Err("e")
+
+
+def test_result_flatten() -> None:
+    # Ok(Ok(x)) -> Ok(x)
+    assert Ok(Ok(5)).flatten() == Ok(5)
+
+    # Ok(Err(e)) -> Err(e)
+    assert Ok(Err("inner")).flatten() == Err("inner")
+
+    # Err(e) -> Err(e)
+    assert Err("outer").flatten() == Err("outer")
