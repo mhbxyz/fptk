@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from fptk.adt.result import Err, Ok, Result
 
 THREE = 3
@@ -135,3 +137,15 @@ def test_result_ap() -> None:
     # Error at any step propagates
     assert Ok(add).ap(Err("e1")).ap(Ok(2)) == Err("e1")
     assert Ok(add).ap(Ok(1)).ap(Err("e2")) == Err("e2")
+
+
+def test_unwrap_err_raises() -> None:
+    """unwrap() on Err raises ValueError with error value."""
+    with pytest.raises(ValueError, match="Unwrapped Err"):
+        Err("error").unwrap()
+
+
+def test_expect_err_raises() -> None:
+    """expect() on Err raises ValueError with custom message."""
+    with pytest.raises(ValueError, match="custom message"):
+        Err("error").expect("custom message")

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import cast
 
+import pytest
+
 from fptk.adt.option import NOTHING, Option, Some, from_nullable
 from fptk.adt.result import Err, Ok
 
@@ -67,14 +69,20 @@ def test_option_zip_with() -> None:
     assert Some("hello").zip_with(Some(" world"), lambda a, b: a + b) == Some("hello world")
 
     # Any NOTHING -> NOTHING (lambda never called, but typed as if it could be)
-    assert NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING  # pyright: ignore[reportOperatorIssue]
-    assert Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING  # pyright: ignore[reportOperatorIssue]
+    assert (
+        NOTHING.zip_with(Some(1), lambda a, b: a + b) == NOTHING
+    )  # pyright: ignore[reportOperatorIssue]
+    assert (
+        Some(1).zip_with(NOTHING, lambda a, b: a + b) == NOTHING
+    )  # pyright: ignore[reportOperatorIssue]
 
 
 def test_option_and_then_alias() -> None:
     # and_then is alias for bind
     assert Some(5).and_then(lambda x: Some(x + 1)) == Some(6)
-    assert NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING  # pyright: ignore[reportOperatorIssue]
+    assert (
+        NOTHING.and_then(lambda x: Some(x + 1)) == NOTHING
+    )  # pyright: ignore[reportOperatorIssue]
 
 
 def test_option_filter() -> None:
@@ -123,3 +131,15 @@ def test_option_ap() -> None:
         return lambda b: (a, b)
 
     assert Some(make_pair).ap(Some(1)).ap(Some("x")) == Some((1, "x"))
+
+
+def test_unwrap_nothing_raises() -> None:
+    """unwrap() on NOTHING raises ValueError."""
+    with pytest.raises(ValueError, match="Unwrapped NOTHING"):
+        NOTHING.unwrap()
+
+
+def test_expect_nothing_raises() -> None:
+    """expect() on NOTHING raises ValueError with custom message."""
+    with pytest.raises(ValueError, match="custom message"):
+        NOTHING.expect("custom message")
