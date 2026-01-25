@@ -91,6 +91,7 @@ echec = Err("un problème est survenu")
 | `zip(other)` | `(Result[U, E]) -> Result[tuple[T, U], E]` | Combine deux `Result` en un tuple de valeurs. |
 | `ap(other)` | `Result[T -> U, E].ap(Result[T, E]) -> Result[U, E]` | Applique une fonction enveloppée à une valeur enveloppée. |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transforme la valeur d'erreur. |
+| `bimap(ok, err)` | `(T -> U, E -> F) -> Result[U, F]` | Transforme les deux côtés à la fois. |
 | `recover(f)` | `(E -> T) -> Result[T, E]` | Convertit `Err` en `Ok` via une fonction. |
 | `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convertit `Err` en un autre `Result`. |
 | `unwrap_or(default)` | `(U) -> T | U` | Récupère la valeur ou une valeur par défaut. |
@@ -127,6 +128,20 @@ def map_err(self, f):
     if isinstance(self, Err):
         return Err(f(self.error))
     return self  # Les instances Ok passent sans modification
+```
+
+### Transformer les deux côtés : `bimap`
+
+Lorsque vous devez transformer à la fois la valeur de succès et l'erreur, utilisez `bimap` pour plus d'efficacité :
+
+```python
+result.bimap(
+    ok=lambda x: x * 2,           # Transforme le succès
+    err=lambda e: f"Erreur: {e}"  # Transforme l'erreur
+)
+
+# Équivalent à (mais plus efficace que) :
+result.map(lambda x: x * 2).map_err(lambda e: f"Erreur: {e}")
 ```
 
 ### Programmation orientée chemin de fer

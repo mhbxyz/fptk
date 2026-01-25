@@ -149,3 +149,26 @@ def test_expect_err_raises() -> None:
     """expect() on Err raises ValueError with custom message."""
     with pytest.raises(ValueError, match="custom message"):
         Err("error").expect("custom message")
+
+
+TEN = 10
+
+
+def test_result_bimap() -> None:
+    """bimap transforms both sides."""
+    # Ok: applies ok function
+    assert Ok(5).bimap(lambda x: x * 2, lambda e: f"Error: {e}") == Ok(TEN)
+
+    # Err: applies err function
+    assert Err("fail").bimap(lambda x: x * 2, lambda e: f"Error: {e}") == Err("Error: fail")
+
+
+def test_result_bimap_type_change() -> None:
+    """bimap can change types of both sides."""
+    result: Result[int, str] = Ok(FOUR)
+    mapped = result.bimap(lambda x: str(x), lambda e: len(e))
+    assert mapped == Ok("4")
+
+    result2: Result[int, str] = Err("hello")
+    mapped2 = result2.bimap(lambda x: str(x), lambda e: len(e))
+    assert mapped2 == Err(5)

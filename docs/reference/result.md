@@ -93,6 +93,7 @@ failure = Err("something went wrong")
 | `zip_with(other, f)` | `(Result[U, E], (T, U) -> R) -> Result[R, E]` | Combine two Results with function |
 | `ap(other)` | `Result[T -> U, E].ap(Result[T, E]) -> Result[U, E]` | Apply wrapped function to wrapped value |
 | `map_err(f)` | `(E -> F) -> Result[T, F]` | Transform error value |
+| `bimap(ok, err)` | `(T -> U, E -> F) -> Result[U, F]` | Transform both sides at once |
 | `recover(f)` | `(E -> T) -> Result[T, E]` | Convert `Err` to `Ok` using function |
 | `recover_with(f)` | `(E -> Result[T, E]) -> Result[T, E]` | Convert `Err` to another `Result` |
 | `unwrap_or(default)` | `(U) -> T | U` | Get value or default |
@@ -159,6 +160,30 @@ def map_err(self, f):
     if isinstance(self, Err):
         return Err(f(self.error))
     return self  # Ok passes through
+```
+
+### Transform Both Sides: `bimap`
+
+When you need to transform both the success and error values, use `bimap` for efficiency:
+
+```python
+result.bimap(
+    ok=lambda x: x * 2,        # Transform success
+    err=lambda e: f"Error: {e}" # Transform error
+)
+
+# Equivalent to (but more efficient than):
+result.map(lambda x: x * 2).map_err(lambda e: f"Error: {e}")
+```
+
+Example: converting internal types to API response types:
+
+```python
+def to_api_response(result: Result[User, DbError]) -> Result[UserDTO, ApiError]:
+    return result.bimap(
+        ok=lambda user: UserDTO.from_user(user),
+        err=lambda e: ApiError(code=500, message=str(e))
+    )
 ```
 
 ### Railway-Oriented Programming

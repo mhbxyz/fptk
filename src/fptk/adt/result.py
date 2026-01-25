@@ -15,6 +15,7 @@ Everyday usage
 - ``bind(f)`` (aka ``and_then``) chains computations that return ``Result``;
   the first ``Err`` short‑circuits the chain.
 - ``map_err(f)`` transforms the error while preserving successes.
+- ``bimap(ok, err)`` transforms both sides at once.
 - ``unwrap_or(default)``/``unwrap_or_else(f)`` provide safe fallbacks.
 - ``match(ok, err)`` is a straightforward way to consume success vs error.
 
@@ -183,6 +184,30 @@ class Result[T, E]:
         if isinstance(self, Err):
             return Err(f(self.error))
         return cast(Result[T, U], self)
+
+    def bimap[U, F](
+        self: Result[T, E],
+        ok: Callable[[T], U],
+        err: Callable[[E], F],
+    ) -> Result[U, F]:
+        """Transform both sides: ``ok`` for success, ``err`` for failure.
+
+        More efficient than chaining ``map`` and ``map_err`` as it performs
+        a single pattern match.
+
+        - ``map(f)`` ≡ ``bimap(ok=f, err=identity)``
+        - ``map_err(f)`` ≡ ``bimap(ok=identity, err=f)``
+
+        Example::
+
+            >>> Ok(5).bimap(lambda x: x * 2, lambda e: f"Error: {e}")
+            Ok(10)
+            >>> Err("fail").bimap(lambda x: x * 2, lambda e: f"Error: {e}")
+            Err('Error: fail')
+        """
+        if isinstance(self, Ok):
+            return Ok(ok(self.value))
+        return Err(err(cast(Err[T, E], self).error))
 
     def recover(self: Result[T, E], f: Callable[[E], T]) -> Result[T, E]:
         """Convert ``Err`` to ``Ok`` by applying ``f`` to the error.
